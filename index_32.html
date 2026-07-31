@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plantão — Controle de Plantões Médicos</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --panel:#1e293b;
+    --panel-2:#273449;
+    --border:#334155;
+    --text:#e2e8f0;
+    --muted:#94a3b8;
+    --accent:#38bdf8;
+    --accent-2:#0ea5e9;
+    --green:#34d399;
+    --green-bg:#064e3b;
+    --amber:#fbbf24;
+    --amber-bg:#4a3407;
+    --red:#f87171;
+    --radius:14px;
+    --shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(160deg,#0b1220,#0f172a 40%,#111c33);
+    color:var(--text);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  header.top{
+    padding:22px 28px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    border-bottom:1px solid var(--border);
+    background:rgba(15,23,42,.6);
+    backdrop-filter:blur(6px);
+    position:sticky;top:0;z-index:30;
+  }
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{
+    width:44px;height:44px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+    box-shadow:0 4px 14px rgba(56,189,248,.35);
+  }
+  .brand h1{font-size:20px;margin:0;letter-spacing:.3px}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .top-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    cursor:pointer;border:1px solid var(--border);background:var(--panel-2);color:var(--text);
+    padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;transition:.15s;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:#04283a}
+  .btn.ghost{background:transparent}
+  .btn.danger{color:var(--red);border-color:#5b2626}
+  .btn.small{padding:5px 9px;font-size:12px}
+
+  nav.tabs{
+    display:flex;gap:6px;padding:14px 28px 0;flex-wrap:wrap;
+  }
+  .tab{
+    cursor:pointer;padding:11px 20px;border-radius:12px 12px 0 0;border:1px solid transparent;
+    border-bottom:none;color:var(--muted);font-weight:600;font-size:14px;transition:.15s;
+    display:flex;align-items:center;gap:8px;
+  }
+  .tab:hover{color:var(--text)}
+  .tab.active{background:var(--panel);color:var(--text);border-color:var(--border)}
+
+  main{padding:0 28px 60px;max-width:1180px;margin:0 auto}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .card{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px;box-shadow:var(--shadow);
+  }
+  .card + .card{margin-top:20px}
+
+  /* Summary tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:22px 0}
+  .tile{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px 20px;position:relative;overflow:hidden;
+  }
+  .tile .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  .tile .val{font-size:26px;font-weight:800;margin-top:8px}
+  .tile.pending .val{color:var(--amber)}
+  .tile.received .val{color:var(--green)}
+  .tile.total .val{color:var(--accent)}
+  .tile::after{content:"";position:absolute;right:-20px;top:-20px;width:90px;height:90px;border-radius:50%;opacity:.12}
+  .tile.pending::after{background:var(--amber)}
+  .tile.received::after{background:var(--green)}
+  .tile.total::after{background:var(--accent)}
+  .tile .sub{color:var(--muted);font-size:12px;margin-top:6px}
+
+  /* Calendar */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+  .cal-title{font-size:19px;font-weight:800;text-transform:capitalize;min-width:180px;text-align:center}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .dow{text-align:center;color:var(--muted);font-size:12px;font-weight:700;padding-bottom:4px;text-transform:uppercase}
+  .day{
+    min-height:82px;border:1px solid var(--border);border-radius:10px;padding:7px;background:var(--panel-2);
+    display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:.12s;position:relative;
+  }
+  .day:hover{border-color:var(--accent)}
+  .day.empty{background:transparent;border:1px dashed #222f45;cursor:default}
+  .day.empty:hover{border-color:#222f45}
+  .day .num{font-size:13px;font-weight:700;color:var(--muted)}
+  .day.today{outline:2px solid var(--accent);outline-offset:-2px}
+  .day.today .num{color:var(--accent)}
+  .chip{
+    font-size:10.5px;font-weight:700;border-radius:6px;padding:3px 5px;line-height:1.15;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .chip.paid{background:var(--green-bg);color:var(--green)}
+  .chip.pend{background:var(--amber-bg);color:var(--amber)}
+  .day .more{font-size:10px;color:var(--muted)}
+
+  /* Forms */
+  .grid-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:600}
+  input,select{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:9px;color:var(--text);
+    padding:10px 11px;font-size:14px;font-family:inherit;width:100%;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  input[readonly]{color:var(--accent);font-weight:700;background:#141f33}
+  .form-foot{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;align-items:center}
+  .hint{color:var(--muted);font-size:12px}
+
+  /* Table */
+  .table-wrap{overflow-x:auto;margin-top:6px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:760px}
+  th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  tbody tr:hover{background:var(--panel-2)}
+  td.val{font-weight:700;white-space:nowrap}
+  .badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+  .badge.paid{background:var(--green-bg);color:var(--green)}
+  .badge.pend{background:var(--amber-bg);color:var(--amber)}
+  .badge.ponto{background:#1e3a5f;color:#7dd3fc;margin-left:6px}
+  .badge.clickable{cursor:pointer;transition:.12s}
+  .badge.clickable:hover{filter:brightness(1.25);outline:1px solid currentColor}
+  #pontoPreview table{min-width:0}
+  #pontoPreview td,#pontoPreview th{padding:8px 8px;font-size:12.5px}
+  #pontoPreview select{padding:6px 8px;font-size:12px}
+  .pp-skip{opacity:.5}
+  .pp-warn{color:var(--amber);font-weight:700}
+  .pp-new{color:var(--green);font-weight:700}
+  .pp-sum{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;font-size:13px}
+  .pp-sum b{font-size:15px;display:block}
+  .tile-2{display:flex;gap:22px;margin-top:10px;flex-wrap:wrap}
+  .tile-2 .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  .tile-2 .v{font-size:21px;font-weight:800;margin-top:3px}
+  .tile-2 .v.rc{color:var(--green)}
+  .tile-2 .v.pd{color:var(--amber)}
+  .svc-grid{display:grid;grid-template-columns:1fr auto auto auto;gap:2px 18px;align-items:center;margin-top:6px}
+  .svc-grid .h{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  .svc-grid .nm{font-weight:600}
+  .svc-grid .pd{color:var(--amber);font-weight:800;text-align:right}
+  .svc-grid .rc{color:var(--green);font-weight:700;text-align:right}
+  .svc-grid .tt{color:var(--accent);font-weight:700;text-align:right}
+  .svc-grid .rowline{grid-column:1/-1;height:1px;background:var(--border);margin:4px 0}
+  .row-actions{display:flex;gap:6px}
+  .filters{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
+  .filters label.f{min-width:150px}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+  .empty-state .big{font-size:40px;margin-bottom:8px;opacity:.5}
+
+  /* Monthly summary list */
+  .month-block{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+  .month-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:14px 18px;background:var(--panel-2);cursor:pointer;
+  }
+  .month-head h3{margin:0;font-size:16px;text-transform:capitalize}
+  .month-nums{display:flex;gap:20px;flex-wrap:wrap;font-size:13px}
+  .month-nums span b{display:block;font-size:15px}
+  .m-total b{color:var(--accent)}
+  .m-recv b{color:var(--green)}
+  .m-pend b{color:var(--amber)}
+  .month-body{padding:0 18px;max-height:0;overflow:hidden;transition:max-height .25s ease,padding .25s ease}
+  .month-body.open{max-height:2000px;padding:12px 18px 16px}
+
+  /* Modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(3,8,20,.72);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;z-index:60;padding:20px;
+  }
+  .overlay.show{display:flex}
+  .modal{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;max-width:560px;width:100%;
+    box-shadow:var(--shadow);max-height:90vh;overflow:auto;
+  }
+  .modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+  .modal-head h2{margin:0;font-size:18px}
+  .modal-body{padding:22px}
+  .x{cursor:pointer;color:var(--muted);font-size:22px;line-height:1;border:none;background:none}
+  .x:hover{color:var(--text)}
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--panel-2);border:1px solid var(--accent);color:var(--text);
+    padding:12px 20px;border-radius:12px;font-weight:600;font-size:14px;z-index:90;
+    opacity:0;transition:.3s;box-shadow:var(--shadow);
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .sec-title{font-size:15px;font-weight:800;margin:0 0 4px;color:var(--text)}
+  .sec-sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+  input[type=file]{display:none}
+  .req{color:var(--red)}
+  @media(max-width:640px){
+    .day{min-height:64px}
+    main{padding:0 14px 60px}
+    header.top{padding:16px}
+    nav.tabs{padding:12px 14px 0}
+  }
+  /* OCR */
+  .ocr-box{border:1px dashed var(--border);border-radius:12px;padding:14px;margin-bottom:16px;background:var(--panel-2)}
+  .ocr-box .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  #ocrResult{margin-top:10px}
+  .time-chip{display:inline-block;background:#141f33;border:1px solid var(--border);border-radius:8px;padding:5px 10px;margin:3px;font-weight:700;font-size:13px;cursor:pointer}
+  .time-chip:hover{border-color:var(--accent)}
+  .ocr-raw{margin-top:8px;font-size:11px;color:var(--muted);max-height:80px;overflow:auto;white-space:pre-wrap;background:#0d1626;border-radius:8px;padding:8px}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .paybox{grid-column:1/-1;background:#101b2e;border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--muted)}
+  .paybox b{color:var(--accent)}
+
+  /* ===== Tema claro (modo diurno) ===== */
+  body.light{
+    --bg:#eef2f7;
+    --panel:#ffffff;
+    --panel-2:#f4f7fb;
+    --border:#d7e0ea;
+    --text:#1e293b;
+    --muted:#5b6b7f;
+    --accent:#0284c7;
+    --accent-2:#0369a1;
+    --green:#059669;
+    --green-bg:#d1fae5;
+    --amber:#b45309;
+    --amber-bg:#fdecc8;
+    --red:#dc2626;
+    --shadow:0 8px 24px rgba(30,41,59,.10);
+    background:linear-gradient(160deg,#eef2f7,#f2f6fb 40%,#e9eff6);
+  }
+  body.light header.top{background:rgba(255,255,255,.75)}
+  body.light input,body.light select{background:#ffffff}
+  body.light input[readonly]{background:#eef4fb;color:var(--accent)}
+  body.light .btn.primary{color:#ffffff}
+  body.light .time-chip{background:#eef4fb}
+  body.light .ocr-raw{background:#f1f5f9;color:#475569}
+  body.light .paybox{background:#eef4fb}
+  body.light .day.empty{border-color:#e2e8f0}
+  body.light .badge.ponto{background:#dbeafe;color:#0369a1}
+  body.light input[readonly]{background:#eef4fb}
+
+  /* ===== Login ===== */
+  #authOverlay{position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#0b1220,#0f172a 40%,#111c33);display:none;align-items:center;justify-content:center;padding:20px}
+  body.light #authOverlay{background:linear-gradient(160deg,#eef2f7,#f2f6fb 40%,#e9eff6)}
+  #authOverlay.show{display:flex}
+  .auth-card{background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);width:100%;max-width:390px;padding:30px 28px}
+  .auth-logo{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px}
+  .auth-card h2{text-align:center;margin:0 0 4px;font-size:20px}
+  .auth-card .sub{text-align:center;color:var(--muted);font-size:13px;margin:0 0 20px}
+  .auth-card label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin:12px 0 6px}
+  .auth-card input{width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:11px 12px;font-size:14px}
+  body.light .auth-card input{background:#fff}
+  .auth-card input:focus{outline:none;border-color:var(--accent)}
+  .auth-err{color:var(--red);font-size:13px;min-height:18px;margin-top:10px;font-weight:600}
+  .auth-btn{width:100%;margin-top:16px;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04283a;font-weight:800;font-size:15px;cursor:pointer}
+  .auth-hint{color:var(--muted);font-size:12px;margin-top:14px;text-align:center;line-height:1.5}
+  .user-badge{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;margin-right:6px}
+  .user-badge .av{width:30px;height:30px;border-radius:50%;background:var(--panel-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:12px}
+
+  /* ===== Importar pontos (aba) ===== */
+  .upload-area{border:2px dashed var(--border);border-radius:16px;padding:34px 20px;text-align:center;cursor:pointer;transition:.15s;background:var(--panel-2)}
+  .upload-area:hover{border-color:var(--accent);background:var(--panel)}
+  .upload-icon{font-size:40px;margin-bottom:8px}
+  .upload-label{font-weight:700;font-size:15px}
+  .upload-hint{color:var(--muted);font-size:12.5px;margin-top:4px}
+  .imp-total{text-align:right}
+  .imp-total .n{font-size:28px;font-weight:900;color:var(--green);letter-spacing:-.02em}
+  .imp-total .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:.05em}
+  #impTable input[type=time]{padding:6px 8px;font-size:13px;width:110px}
+  #impTable input[type=text]{padding:6px 8px;font-size:13px}
+  #impTable td,#impTable th{padding:8px 8px;font-size:13px;vertical-align:middle}
+  .imp-thumb{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12.5px;font-weight:600}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
+</head>
+<body>
+
+<!-- ======== LOGIN ======== -->
+<div id="authOverlay">
+  <!-- tela: login -->
+  <div class="auth-card" id="scLogin">
+    <div class="auth-logo">🩺</div>
+    <h2>Plantão</h2>
+    <p class="sub">Acesso da equipe — Enfermaria de Pediatria HPS</p>
+    <label>Usuário</label>
+    <input id="loginUser" autocomplete="username" placeholder="ex: gabrielcm" onkeydown="if(event.key==='Enter')tryLogin()" />
+    <label>Senha</label>
+    <input id="loginPass" type="password" autocomplete="current-password" placeholder="sua senha" onkeydown="if(event.key==='Enter')tryLogin()" />
+    <div class="auth-err" id="loginErr"></div>
+    <button class="auth-btn" onclick="tryLogin()">Entrar</button>
+    <div class="auth-hint">Primeiro acesso: use a senha provisória e defina a sua.</div>
+  </div>
+  <!-- tela: definir senha -->
+  <div class="auth-card" id="scSetPass" style="display:none">
+    <div class="auth-logo">🔒</div>
+    <h2>Criar senha</h2>
+    <p class="sub" id="setPassSub">Primeiro acesso — crie sua senha pessoal.</p>
+    <label>Nova senha (mín. 8 caracteres)</label>
+    <input id="firstPass1" type="password" onkeydown="if(event.key==='Enter')submitSetPass()" />
+    <label>Confirmar senha</label>
+    <input id="firstPass2" type="password" onkeydown="if(event.key==='Enter')submitSetPass()" />
+    <div class="auth-err" id="setPassErr"></div>
+    <button class="auth-btn" onclick="submitSetPass()">Salvar e entrar</button>
+  </div>
+</div>
+
+<header class="top">
+  <div class="brand">
+    <div class="logo">🩺</div>
+    <div>
+      <h1>Plantão</h1>
+      <p>Controle e cálculo de plantões médicos</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="user-badge" id="userBadge" style="display:none"><span class="av" id="userAv"></span><span id="userName"></span></span>
+    <button class="btn" onclick="openForm()">＋ Novo plantão</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab active" data-tab="calendar" onclick="switchTab('calendar')">📅 Calendário</div>
+  <div class="tab" data-tab="list" onclick="switchTab('list')">📝 Plantões</div>
+  <div class="tab" data-tab="escala" onclick="switchTab('escala')">🔁 Escala Fixa</div>
+  <div class="tab" data-tab="importar" onclick="switchTab('importar')">🕒 Importar pontos</div>
+  <div class="tab" data-tab="summary" onclick="switchTab('summary')">💰 Resumo mensal</div>
+  <div class="tab" data-tab="perfil" onclick="switchTab('perfil')">👤 Meu Perfil</div>
+  <div class="tab" data-tab="outros" onclick="switchTab('outros')">⚙️ Outros</div>
+</nav>
+<input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importJSON(event)" />
+
+<main>
+  <!-- ======== CALENDÁRIO ======== -->
+  <section class="view active" id="view-calendar">
+    <div class="tiles" id="quickTiles"></div>
+    <div class="card">
+      <div class="cal-head">
+        <button class="btn small" onclick="calMove(-1)">‹ Anterior</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button class="btn small" onclick="calMove(1)">Próximo ›</button>
+      </div>
+      <div class="cal-grid" id="calDow"></div>
+      <div class="cal-grid" id="calGrid" style="margin-top:8px"></div>
+      <div style="margin-top:16px;display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
+        <span><span class="chip paid" style="display:inline-block">■</span> Recebido</span>
+        <span><span class="chip pend" style="display:inline-block">■</span> Pendente</span>
+        <span style="color:var(--accent)">▢ Hoje</span>
+        <span>Clique num dia para adicionar um plantão</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== PLANTÕES (LISTA) ======== -->
+  <section class="view" id="view-list">
+    <div class="card">
+      <p class="sec-title">Plantões registrados</p>
+      <p class="sec-sub">Filtre por serviço, local, mês ou situação. Clique em editar para ajustar qualquer registro.</p>
+      <div class="filters">
+        <label class="f">Serviço
+          <select id="filterServico" onchange="renderList()"><option value="">Todos os serviços</option></select>
+        </label>
+        <label class="f">Local
+          <select id="filterLocal" onchange="renderList()"><option value="">Todos os locais</option></select>
+        </label>
+        <label class="f">Mês
+          <select id="filterMonth" onchange="renderList()"><option value="">Todos os meses</option></select>
+        </label>
+        <label class="f">Situação
+          <select id="filterStatus" onchange="renderList()">
+            <option value="">Todas</option>
+            <option value="pend">Pendentes</option>
+            <option value="paid">Recebidos</option>
+            <option value="ponto">Falta ponto (valor provisório)</option>
+          </select>
+        </label>
+        <button class="btn primary" onclick="openForm()">＋ Novo plantão</button>
+      </div>
+      <div id="listTotals" style="margin-bottom:12px"></div>
+      <div class="table-wrap">
+        <table id="shiftTable">
+          <thead>
+            <tr>
+              <th>Data</th><th>Horário</th><th>Horas</th>
+              <th>Serviço</th><th>Valor</th><th>Prev. pgto</th><th>Situação</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="shiftBody"></tbody>
+          <tfoot id="shiftFoot"></tfoot>
+        </table>
+      </div>
+      <div id="listEmpty" class="empty-state" style="display:none">
+        <div class="big">📋</div>
+        Nenhum plantão encontrado. Clique em “Novo plantão” para começar.
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== ESCALA FIXA ======== -->
+  <section class="view" id="view-escala">
+    <div class="card">
+      <p class="sec-title">Escala fixa (plantões recorrentes)</p>
+      <p class="sec-sub">Cadastre os plantões que se repetem toda semana. Depois é só gerar os plantões de um mês — sem duplicar o que já existe.</p>
+      <div class="grid-form">
+        <label class="f">Tipo de plantão
+          <select id="esTipo" onchange="esApplyTipo()">
+            <option value="ps_guarda">Paulo Sacramento — Enfermaria Guarda</option>
+            <option value="ps_guarda_vs">Paulo Sacramento — Enfermaria Guarda VS</option>
+            <option value="sobam_ps">SOBAM — PS Infantil</option>
+            <option value="outro">Outro / manual</option>
+          </select>
+        </label>
+        <label class="f">Dias da semana
+          <div id="esDias" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px"></div>
+        </label>
+        <label class="f">Início <input type="time" id="esStart" value="13:00" oninput="esRecalc()" /></label>
+        <label class="f">Fim <input type="time" id="esEnd" value="19:00" oninput="esRecalc()" /></label>
+        <label class="f">Local <input type="text" id="esLocal" list="localList" placeholder="Hospital Paulo Sacramento" /></label>
+        <label class="f">Valor/hora (R$) <input type="number" id="esRate" step="0.01" min="0" oninput="esRecalc()" /></label>
+        <label class="f">Valor por plantão (R$) <input type="number" id="esValue" step="0.01" min="0" /></label>
+      </div>
+      <div class="form-foot">
+        <button class="btn primary" onclick="addEscala()">＋ Adicionar regra</button>
+        <span class="hint" id="esHint"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="sec-title">Regras cadastradas</p>
+      <div id="escalaList"></div>
+      <div class="form-foot" style="align-items:center;gap:14px">
+        <label class="f" style="min-width:150px;margin:0">Gerar para o mês
+          <input type="month" id="esMonth" />
+        </label>
+        <button class="btn primary" onclick="gerarEscala()">Gerar plantões do mês</button>
+        <label class="f" style="flex-direction:row;align-items:center;gap:8px;margin:0;color:var(--text)">
+          <input type="checkbox" id="esStatusPaid" style="width:auto" /> marcar como recebido
+        </label>
+        <span class="hint" id="esGenHint"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== IMPORTAR PONTOS ======== -->
+  <section class="view" id="view-importar">
+    <div class="card">
+      <p class="sec-title">🕒 Extrator de pontos</p>
+      <p class="sec-sub">Envie uma ou <b>mais fotos</b> do espelho de ponto (a tabela com Entrada, Saída e a coluna Horas). O sistema lê cada linha como um dia, você pode <b>corrigir</b> entrada/saída, ele ignora os plantões noturnos e cruza os diurnos/vespertinos com o calendário — recalculando o valor pelas horas do ponto.</p>
+      <div class="upload-area" onclick="document.getElementById('impFile').click()">
+        <div class="upload-icon">📷</div>
+        <div class="upload-label">Toque para enviar foto(s) do ponto</div>
+        <div class="upload-hint">JPG ou PNG · pode selecionar várias · a imagem não sai do seu dispositivo</div>
+      </div>
+      <input type="file" id="impFile" accept="image/*" multiple style="display:none" onchange="addPontoFiles(event)" />
+      <div id="impThumbs" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+      <div class="form-foot" id="impActions" style="display:none">
+        <button class="btn primary" id="impReadBtn" onclick="runPontoOCR()">Ler horários das fotos</button>
+        <button class="btn ghost" onclick="document.getElementById('impFile').click()">＋ Adicionar mais fotos</button>
+        <button class="btn ghost" onclick="impClear()">Limpar tudo</button>
+      </div>
+      <div id="impStatus" class="hint" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" id="impResult" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        <div><p class="sec-title" style="margin:0">🧮 Linhas lidas</p><p class="sec-sub" style="margin:2px 0 0" id="impSummary"></p></div>
+        <div class="imp-total"><div class="lbl">Horas a lançar</div><div class="n" id="impTotalH">0h</div></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px">
+        <label class="f" style="min-width:220px;margin:0">Local padrão dos novos
+          <input type="text" id="impLocalPad" list="localList" placeholder="Hospital Paulo Sacramento" />
+        </label>
+        <button class="btn ghost" onclick="impAplicarLocal()">Aplicar a todos</button>
+      </div>
+      <div class="table-wrap">
+        <table id="impTable">
+          <thead><tr><th>Incluir</th><th>Dia</th><th>Entrada</th><th>Saída</th><th>Horas</th><th>No calendário?</th><th></th></tr></thead>
+          <tbody id="impBody"></tbody>
+        </table>
+      </div>
+      <div class="form-foot">
+        <button class="btn primary" onclick="lancarPonto()">Lançar no calendário</button>
+        <span class="hint" id="impRawToggle" style="cursor:pointer;margin-left:auto" onclick="var e=document.getElementById('impRaw');e.style.display=e.style.display==='none'?'block':'none'">ver texto lido</span>
+      </div>
+      <div class="ocr-raw" id="impRaw" style="display:none;max-height:140px"></div>
+      <div id="impDone" style="display:none;margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- ======== RESUMO MENSAL ======== -->
+  <section class="view" id="view-summary">
+    <div class="card" style="padding:14px 20px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <label class="f" style="min-width:240px;margin:0">Serviço (para contagem individual)
+          <select id="summaryServico" onchange="renderSummary()"><option value="">Todos os serviços</option></select>
+        </label>
+        <span class="hint" id="summaryServicoHint" style="align-self:flex-end;padding-bottom:10px"></span>
+      </div>
+    </div>
+
+    <div class="tiles" id="summaryTiles"></div>
+
+    <div class="card">
+      <p class="sec-title">Pendente a receber por serviço</p>
+      <p class="sec-sub">Quanto ainda falta receber em cada serviço (e o total realizado / já recebido).</p>
+      <div id="byService"></div>
+    </div>
+
+    <div class="card">
+      <p class="sec-title">Recebimentos por mês</p>
+      <p class="sec-sub">Agrupado pela data de pagamento — recebido e a receber em cada mês. Um mês de pagamento pode reunir plantões realizados até ~2 meses antes (SOBAM: ciclo 16→15, fim do mês seguinte; Paulo Sacramento: fim do mês seguinte ao plantão). Clique num mês para ver os plantões.</p>
+      <div id="payForecast"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div>
+          <p class="sec-title">Resumo por mês (realização)</p>
+          <p class="sec-sub">Total realizado, já recebido e pendente a receber em cada mês. Clique num mês para ver os plantões.</p>
+        </div>
+        <label class="f" style="min-width:180px">Período
+          <select id="summaryPeriod" onchange="renderSummary()">
+            <option value="3">De 2 meses atrás em diante</option>
+            <option value="6">De 5 meses atrás em diante</option>
+            <option value="all">Todos os meses</option>
+          </select>
+        </label>
+      </div>
+      <div id="monthList"></div>
+      <div id="summaryEmpty" class="empty-state" style="display:none">
+        <div class="big">💰</div>
+        Nada para resumir ainda. Registre seus plantões primeiro.
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== MEU PERFIL ======== -->
+  <section class="view" id="view-perfil">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div id="perfilAv" style="width:58px;height:58px;border-radius:15px;background:var(--panel-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:22px"></div>
+        <div>
+          <div style="font-size:20px;font-weight:800" id="perfilNome">—</div>
+          <div class="hint">Usuário: <b id="perfilLogin">—</b> · Enfermaria de Pediatria HPS</div>
+        </div>
+      </div>
+      <div class="tiles" id="perfStats" style="margin-top:18px"></div>
+    </div>
+    <div class="card">
+      <p class="sec-title">🔑 Trocar minha senha</p>
+      <p class="sec-sub">Vale só para a sua conta neste dispositivo/navegador.</p>
+      <div class="grid-form">
+        <label class="f">Nova senha (mín. 8) <input type="password" id="cpPass1" /></label>
+        <label class="f">Confirmar nova senha <input type="password" id="cpPass2" /></label>
+      </div>
+      <div class="form-foot">
+        <button class="btn primary" onclick="trocarSenha()">Salvar nova senha</button>
+        <span class="auth-err" id="cpErr" style="min-height:0;margin:0"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== OUTROS ======== -->
+  <section class="view" id="view-outros">
+    <div class="card">
+      <p class="sec-title">Aparência</p>
+      <div class="form-foot"><button class="btn" id="themeBtn" onclick="toggleTheme()">☀️ Claro</button></div>
+    </div>
+    <div class="card">
+      <p class="sec-title">Dados e backup</p>
+      <p class="sec-sub">Salve uma cópia dos seus plantões ou restaure de um arquivo. Vale para o usuário logado.</p>
+      <div class="form-foot" style="gap:10px">
+        <button class="btn ghost" onclick="exportJSON()">⤓ Backup (JSON)</button>
+        <button class="btn ghost" onclick="exportCSV()">⤓ Exportar CSV</button>
+        <button class="btn ghost" onclick="document.getElementById('importFile').click()">⤒ Importar (JSON)</button>
+      </div>
+    </div>
+    <div class="card">
+      <p class="sec-title">Conta</p>
+      <div class="form-foot"><button class="btn ghost danger" onclick="logout()">Sair da conta</button></div>
+    </div>
+  </section>
+</main>
+
+<!-- ======== MODAL FORM ======== -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Novo plantão</h2>
+      <button class="x" onclick="closeForm()">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="shiftForm" onsubmit="saveShift(event)">
+        <input type="hidden" id="fId" />
+
+        <div class="ocr-box">
+          <div class="row">
+            <button type="button" class="btn" onclick="document.getElementById('ocrFile').click()">📷 Ler foto do ponto</button>
+            <input type="file" id="ocrFile" accept="image/*" onchange="runOCR(event)" />
+            <span id="ocrStatus" class="hint">Tire/anexe a foto do ponto eletrônico e eu tento ler os horários automaticamente.</span>
+          </div>
+          <div id="ocrResult"></div>
+        </div>
+
+        <div class="grid-form">
+          <label class="f">Tipo de plantão
+            <select id="fTipo" onchange="applyTipo()">
+              <option value="outro">Outro / manual</option>
+              <option value="sobam_ps">SOBAM — PS Infantil (fixo)</option>
+              <option value="ps_guarda">Paulo Sacramento — Enfermaria Guarda</option>
+              <option value="ps_guarda_vs">Paulo Sacramento — Enfermaria Guarda VS</option>
+            </select>
+          </label>
+          <label class="f">Data do plantão <span class="req">*</span>
+            <input type="date" id="fDate" required onchange="onDateChange()" />
+          </label>
+          <label class="f">Local / Hospital <span class="req">*</span>
+            <input type="text" id="fLocal" list="localList" placeholder="Ex: Hospital Central" required />
+            <datalist id="localList"></datalist>
+          </label>
+          <label class="f">Início <span class="req">*</span>
+            <input type="time" id="fStart" required oninput="recalc()" />
+          </label>
+          <label class="f">Fim <span class="req">*</span>
+            <input type="time" id="fEnd" required oninput="recalc()" />
+          </label>
+          <label class="f">Horas
+            <input type="number" id="fHours" step="0.25" min="0" oninput="recalcFromHours()" />
+          </label>
+          <label class="f">Valor por hora (R$)
+            <input type="number" id="fRate" step="0.01" min="0" placeholder="0,00" oninput="onRateInput()" />
+          </label>
+          <label class="f">Valor total (R$) <span class="req">*</span>
+            <input type="number" id="fValue" step="0.01" min="0" placeholder="0,00" required oninput="onValueInput()" />
+          </label>
+          <label class="f" id="pontoWrap" style="display:none;grid-column:1/-1">Valor da enfermaria
+            <span style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text)">
+              <input type="checkbox" id="fPonto" onchange="onPontoToggle()" style="width:auto" />
+              Calcular pelo ponto (horas × valor/hora). Desmarcado = valor fixo por plantão (provisório, a confirmar).
+            </span>
+          </label>
+          <div class="paybox" id="tipoWarn" style="display:none;grid-column:1/-1;border-color:var(--amber)"></div>
+          <label class="f">Situação do pagamento
+            <select id="fStatus" onchange="togglePayDate()">
+              <option value="pend">Pendente</option>
+              <option value="paid">Recebido</option>
+            </select>
+          </label>
+          <label class="f" id="payDateWrap">Data de pagamento
+            <input type="date" id="fPayDate" />
+          </label>
+          <div class="paybox" id="payBox"></div>
+        </div>
+        <label class="f" style="margin-top:14px">Observações
+          <input type="text" id="fNotes" placeholder="Opcional" />
+        </label>
+        <p class="hint" style="margin-top:12px">As horas são calculadas automaticamente pelos horários (plantões que viram a madrugada são considerados). Ao escolher o tipo de plantão, o valor e a previsão de pagamento são preenchidos automaticamente — mas você pode ajustar tudo manualmente.</p>
+        <div class="form-foot">
+          <button type="submit" class="btn primary">Salvar plantão</button>
+          <button type="button" class="btn ghost" onclick="closeForm()">Cancelar</button>
+          <button type="button" class="btn danger" id="delBtn" style="display:none;margin-left:auto" onclick="deleteShift()">Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= Autenticação / multiusuário ================= */
+var PROV_PASS='enfpedhps';
+var LOCK_MAX=5, LOCK_MS=15*60*1000;
+var USERS=[
+  {login:'amandawb',  nome:'Amanda W. B.'},
+  {login:'carolinenc',nome:'Caroline N. C.'},
+  {login:'gabrielcm', nome:'Gabriel C. M.'},
+  {login:'julianocar',nome:'Juliano C. A. R.'},
+  {login:'rafaeldml', nome:'Rafael de M. L.'}
+];
+var store={ mem:{},
+  get:function(k){ try{ return localStorage.getItem(k); }catch(e){ return (k in this.mem)?this.mem[k]:null; } },
+  set:function(k,v){ try{ localStorage.setItem(k,v); }catch(e){ this.mem[k]=v; } },
+  del:function(k){ try{ localStorage.removeItem(k); }catch(e){ delete this.mem[k]; } } };
+var currentUser=null, pendingLogin=null;
+function dbUsers(){ try{ return JSON.parse(store.get('pl_users')||'{}'); }catch(e){ return {}; } }
+function saveUsers(o){ store.set('pl_users', JSON.stringify(o)); }
+function userByLogin(l){ for(var i=0;i<USERS.length;i++){ if(USERS[i].login===l) return USERS[i]; } return null; }
+function iniciais(n){ var p=(n||'').replace(/\./g,'').trim().split(/\s+/); var a=p[0]?p[0][0]:'?'; var b=p.length>1?p[p.length-1][0]:''; return (a+b).toUpperCase(); }
+async function sha256(s){
+  try{ var buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s+'|pl-salt'));
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
+  catch(e){ var h=0,str=s+'|pl-salt'; for(var i=0;i<str.length;i++){ h=(h<<5)-h+str.charCodeAt(i); h|=0; } return 'f'+(h>>>0).toString(16); }
+}
+function lockState(){ try{ return JSON.parse(store.get('pl_lock')||'{"a":0,"u":0}'); }catch(e){ return {a:0,u:0}; } }
+function setLock(o){ store.set('pl_lock', JSON.stringify(o)); }
+function showAuthScreen(id){ ['scLogin','scSetPass'].forEach(function(s){ var el=document.getElementById(s); if(el) el.style.display=(s===id)?'block':'none'; }); }
+function showLogin(){ document.getElementById('authOverlay').classList.add('show'); showAuthScreen('scLogin'); setTimeout(function(){ var u=document.getElementById('loginUser'); if(u) u.focus(); },60); }
+async function tryLogin(){
+  var err=document.getElementById('loginErr'); err.textContent='';
+  var login=(document.getElementById('loginUser').value||'').trim().toLowerCase();
+  var pass=document.getElementById('loginPass').value||'';
+  var lk=lockState();
+  if(lk.u && Date.now()<lk.u){ err.textContent='Muitas tentativas. Tente em '+Math.ceil((lk.u-Date.now())/60000)+' min.'; return; }
+  var u=userByLogin(login);
+  if(!u){ return failLogin('Usuário ou senha incorretos.'); }
+  var users=dbUsers(), rec=users[login]||{passHash:null};
+  if(rec.passHash){
+    if((await sha256(pass))===rec.passHash){ return okLogin(login); }
+    return failLogin('Usuário ou senha incorretos.');
+  } else {
+    if(pass===PROV_PASS){ pendingLogin=login; setLock({a:0,u:0});
+      document.getElementById('setPassErr').textContent=''; document.getElementById('firstPass1').value=''; document.getElementById('firstPass2').value='';
+      document.getElementById('setPassSub').textContent='Olá, '+u.nome.split(' ')[0]+'! Primeiro acesso — crie sua senha pessoal.';
+      showAuthScreen('scSetPass'); return; }
+    return failLogin('Senha provisória incorreta.');
+  }
+}
+function failLogin(msg){
+  var lk=lockState(); lk.a=(lk.a||0)+1;
+  if(lk.a>=LOCK_MAX){ lk.u=Date.now()+LOCK_MS; lk.a=0; document.getElementById('loginErr').textContent='Muitas tentativas. Bloqueado por 15 minutos.'; }
+  else { document.getElementById('loginErr').textContent=msg+' ('+(LOCK_MAX-lk.a)+' restante(s))'; }
+  setLock(lk);
+}
+function okLogin(login){ setLock({a:0,u:0}); store.set('pl_session', login); completeLogin(login); }
+async function submitSetPass(){
+  var err=document.getElementById('setPassErr'); err.textContent='';
+  var p1=document.getElementById('firstPass1').value||'', p2=document.getElementById('firstPass2').value||'';
+  if(p1.length<8){ err.textContent='A senha deve ter pelo menos 8 caracteres.'; return; }
+  if(p1!==p2){ err.textContent='As senhas não coincidem.'; return; }
+  if(p1===PROV_PASS){ err.textContent='Escolha uma senha diferente da provisória.'; return; }
+  var users=dbUsers(); users[pendingLogin]={passHash:await sha256(p1)}; saveUsers(users);
+  store.set('pl_session', pendingLogin); completeLogin(pendingLogin); pendingLogin=null;
+}
+function completeLogin(login){
+  currentUser=login;
+  var u=userByLogin(login);
+  document.getElementById('authOverlay').classList.remove('show');
+  var b=document.getElementById('userBadge'); b.style.display='flex';
+  document.getElementById('userAv').textContent=iniciais(u.nome);
+  document.getElementById('userName').textContent=u.nome;
+  load();
+  calY=today.getFullYear(); calM=today.getMonth();
+  if(calY<START_YEAR){ calY=START_YEAR; calM=START_MONTH; }
+  refreshAll();
+  switchTab('calendar');
+}
+function logout(){
+  currentUser=null; store.del('pl_session'); shifts=[];
+  document.getElementById('userBadge').style.display='none';
+  document.getElementById('loginUser').value=''; document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').textContent='';
+  showLogin();
+}
+
+/* ================= Dados ================= */
+const STORAGE_KEY = "plantao_data_v1";
+const MONTHS = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const DOW = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+const START_YEAR = 2026, START_MONTH = 0; // janeiro/2026
+
+/* Tabelas de pagamento (regras fornecidas)
+   mode: hourly = valor por hora × horas | fixed_wd = valor fixo dia útil/fim de semana | manual = você define
+   pay:  paulo = fim do mês seguinte | sobam = ciclo 16→15, pago no fim do mês seguinte ao fechamento */
+const TIPOS = {
+  outro:        { label:"Outro / manual",                          local:"",                          mode:"manual",     pay:"auto" },
+  sobam_ps:     { label:"SOBAM — PS Infantil",                     local:"SOBAM",                     mode:"fixed_wd",   pay:"sobam", weekday:1662.50, weekend:1900.00 },
+  ps_guarda:    { label:"Paulo Sacramento — Enfermaria Guarda",    local:"Hospital Paulo Sacramento", mode:"enfermaria", pay:"paulo", rate:97.20, fixo:729.00 },
+  ps_guarda_vs: { label:"Paulo Sacramento — Enfermaria Guarda VS", local:"Hospital Paulo Sacramento", mode:"enfermaria", pay:"paulo", rate:148.00, fixo:888.00 }
+};
+const SERVICOS = { ps_guarda:"Enfermaria – Guarda", ps_guarda_vs:"Enfermaria – Guarda VS", sobam_ps:"PS Infantil – SOBAM", ps_pediatria:"Pediatria Noturno" };
+const GUARDA_VS_INICIO = "2026-07-21"; // Enfermaria Guarda VS só existe a partir desta data
+function servico(s){ return SERVICOS[s.type] || s.local || "Outro"; }
+function needsPonto(s){ return (s.type==="ps_guarda"||s.type==="ps_guarda_vs") && !s.pontoConfirmado; }
+
+let shifts = [];
+let calY, calM;
+const today = new Date();
+
+const SEED = [{"id": "477D1FB5-12F5-452F-AF79-B997053F3ADE", "type": "ps_guarda", "date": "2026-02-02", "local": "Hospital Paulo Sacramento", "start": "13:17", "end": "18:22", "hours": 5.08, "rate": 97.2, "value": 493.78, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.08}, {"id": "2246F6E1-1EA1-4F17-A46F-29B3A4AE0D44", "type": "ps_guarda", "date": "2026-02-03", "local": "Hospital Paulo Sacramento", "start": "13:15", "end": "19:21", "hours": 6.1, "rate": 97.2, "value": 592.92, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.1}, {"id": "8AAE0876-02CF-4ACF-A9D6-AB0D95F95D4A", "type": "ps_guarda", "date": "2026-02-04", "local": "Hospital Paulo Sacramento", "start": "12:49", "end": "19:05", "hours": 6.27, "rate": 97.2, "value": 609.44, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.27}, {"id": "54AD34F7-0AD8-4D8E-A539-ABC44678238F", "type": "ps_guarda", "date": "2026-02-05", "local": "Hospital Paulo Sacramento", "start": "13:04", "end": "19:02", "hours": 5.97, "rate": 97.2, "value": 580.28, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.02}, {"id": "D19CFEAF-34D5-491B-BF65-A966F04763E8", "type": "ps_guarda", "date": "2026-02-06", "local": "Hospital Paulo Sacramento", "start": "13:24", "end": "18:23", "hours": 4.98, "rate": 97.2, "value": 484.06, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.98}, {"id": "0B3276A6-006D-4A7F-837E-E661DC3B7BE0", "type": "ps_guarda", "date": "2026-02-09", "local": "Hospital Paulo Sacramento", "start": "13:02", "end": "19:12", "hours": 6.17, "rate": 97.2, "value": 599.72, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.17}, {"id": "9E8CA08E-70A1-4297-9A64-FB324C0376C3", "type": "ps_guarda", "date": "2026-02-10", "local": "Hospital Paulo Sacramento", "start": "13:24", "end": "18:54", "hours": 5.5, "rate": 97.2, "value": 534.6, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.5}, {"id": "F08AF58A-9A0F-4672-8A8C-9F5AA4C1E01B", "type": "ps_guarda", "date": "2026-02-11", "local": "Hospital Paulo Sacramento", "start": "13:16", "end": "19:12", "hours": 5.93, "rate": 97.2, "value": 576.4, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.93}, {"id": "F3D58853-3A37-4C2A-BA73-882C53D15E3B", "type": "ps_guarda", "date": "2026-02-12", "local": "Hospital Paulo Sacramento", "start": "13:14", "end": "19:23", "hours": 6.15, "rate": 97.2, "value": 597.78, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.15}, {"id": "65C5E28A-B217-4221-B186-BDFEAE52ACCB", "type": "ps_guarda", "date": "2026-02-13", "local": "Hospital Paulo Sacramento", "start": "13:04", "end": "19:00", "hours": 5.93, "rate": 97.2, "value": 576.4, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.93}, {"id": "26BFF993-1048-4065-BD82-439177257F2C", "type": "sobam_ps", "date": "2026-02-14", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": ""}, {"id": "7ADD54D5-37DF-4697-AA99-A7D41D9F1F26", "type": "ps_guarda", "date": "2026-02-16", "local": "Hospital Paulo Sacramento", "start": "13:03", "end": "18:53", "hours": 5.83, "rate": 97.2, "value": 566.68, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.83}, {"id": "5F837126-580B-4F9D-A053-E7862E28DA87", "type": "ps_guarda", "date": "2026-02-17", "local": "Hospital Paulo Sacramento", "start": "12:56", "end": "17:57", "hours": 5.02, "rate": 97.2, "value": 487.94, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.02}, {"id": "A1AF7445-EED0-4F4D-94A3-FDD7FF9DA9EE", "type": "ps_guarda", "date": "2026-02-18", "local": "Hospital Paulo Sacramento", "start": "12:51", "end": "19:08", "hours": 6.28, "rate": 97.2, "value": 610.42, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.28}, {"id": "E988F121-7B11-4524-A498-4E248AAAD715", "type": "ps_guarda", "date": "2026-02-19", "local": "Hospital Paulo Sacramento", "start": "13:09", "end": "19:01", "hours": 5.87, "rate": 97.2, "value": 570.56, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.87}, {"id": "3D63C143-0D8D-48D0-B835-77A439C495FC", "type": "ps_guarda", "date": "2026-02-20", "local": "Hospital Paulo Sacramento", "start": "12:56", "end": "19:06", "hours": 6.17, "rate": 97.2, "value": 599.72, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.17}, {"id": "047E731E-FCC0-42C7-A4D0-43A6B27A9ECA", "type": "sobam_ps", "date": "2026-02-21", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": ""}, {"id": "CF0BAABC-5062-42BF-A44E-45AD02B7445D", "type": "ps_guarda", "date": "2026-02-23", "local": "Hospital Paulo Sacramento", "start": "12:57", "end": "18:20", "hours": 5.38, "rate": 97.2, "value": 522.94, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.38}, {"id": "0D9A7E35-E83D-4EFE-8815-C3666882E1BA", "type": "ps_guarda", "date": "2026-02-24", "local": "Hospital Paulo Sacramento", "start": "12:42", "end": "19:00", "hours": 6.3, "rate": 97.2, "value": 612.36, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.3}, {"id": "66F230E6-515E-40B2-8BC0-4950916C9CA4", "type": "ps_guarda", "date": "2026-02-25", "local": "Hospital Paulo Sacramento", "start": "13:13", "end": "19:12", "hours": 5.98, "rate": 97.2, "value": 581.26, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.98}, {"id": "CC36CA4F-9236-427A-9F86-0F0EFC735A08", "type": "ps_guarda", "date": "2026-02-26", "local": "Hospital Paulo Sacramento", "start": "13:37", "end": "20:04", "hours": 6.45, "rate": 97.2, "value": 626.94, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.45}, {"id": "416D1A65-5E42-4D1A-B63A-34614C4B407D", "type": "ps_guarda", "date": "2026-02-27", "local": "Hospital Paulo Sacramento", "start": "13:05", "end": "18:13", "hours": 5.13, "rate": 97.2, "value": 498.64, "status": "paid", "payDate": "", "expectedPay": "2026-03-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.13}, {"id": "1889DB84-1F95-4AAD-9861-E37434DB5864", "type": "sobam_ps", "date": "2026-02-28", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": ""}, {"id": "74B77EAD-D7AD-4A43-B9D7-ED94C5C86AAF", "type": "ps_guarda", "date": "2026-03-03", "local": "Hospital Paulo Sacramento", "start": "12:54", "end": "18:14", "hours": 5.33, "rate": 97.2, "value": 518.08, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.1}, {"id": "9BA0269E-9091-4913-A260-AE4010919679", "type": "ps_guarda", "date": "2026-03-04", "local": "Hospital Paulo Sacramento", "start": "12:45", "end": "19:05", "hours": 6.33, "rate": 97.2, "value": 615.28, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.3}, {"id": "F321830A-EADE-4FD7-A397-CAE92F586518", "type": "ps_guarda", "date": "2026-03-05", "local": "Hospital Paulo Sacramento", "start": "13:11", "end": "19:09", "hours": 5.97, "rate": 97.2, "value": 580.28, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.82}, {"id": "10AD46D5-E450-4722-BFC4-748C26B63A5E", "type": "ps_guarda", "date": "2026-03-06", "local": "Hospital Paulo Sacramento", "start": "13:24", "end": "18:29", "hours": 5.08, "rate": 97.2, "value": 493.78, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.6}, {"id": "66581C3C-B8CF-45B7-B8A9-A1B47034F1F1", "type": "ps_guarda", "date": "2026-03-09", "local": "Hospital Paulo Sacramento", "start": "13:07", "end": "18:00", "hours": 4.88, "rate": 97.2, "value": 474.34, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.88}, {"id": "F93F38BD-155A-4C09-A674-EBFFD89C1C20", "type": "ps_guarda", "date": "2026-03-10", "local": "Hospital Paulo Sacramento", "start": "12:42", "end": "18:16", "hours": 5.57, "rate": 97.2, "value": 541.4, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.3}, {"id": "1AB0D157-EE6E-420F-960C-3728E1A798D3", "type": "ps_guarda", "date": "2026-03-11", "local": "Hospital Paulo Sacramento", "start": "13:05", "end": "19:13", "hours": 6.13, "rate": 97.2, "value": 595.84, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.92}, {"id": "7E87E03E-96AB-45EA-9A09-7B6B367B9B9A", "type": "ps_guarda", "date": "2026-03-12", "local": "Hospital Paulo Sacramento", "start": "13:14", "end": "19:18", "hours": 6.07, "rate": 97.2, "value": 590.0, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.77}, {"id": "12101EC6-DDB6-41DD-853A-C493BC11ABE7", "type": "ps_guarda", "date": "2026-03-13", "local": "Hospital Paulo Sacramento", "start": "13:09", "end": "19:14", "hours": 6.08, "rate": 97.2, "value": 590.98, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.85}, {"id": "09BBD408-84EE-46F7-8C51-B629DB028740", "type": "ps_guarda", "date": "2026-03-16", "local": "Hospital Paulo Sacramento", "start": "12:50", "end": "18:02", "hours": 5.2, "rate": 97.2, "value": 505.44, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.17}, {"id": "B4EF11CB-DC68-4A56-BA97-4867577435B4", "type": "ps_guarda", "date": "2026-03-17", "local": "Hospital Paulo Sacramento", "start": "12:41", "end": "18:54", "hours": 6.22, "rate": 97.2, "value": 604.58, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.32}, {"id": "52E7889A-0CEB-4F42-9997-31092293F736", "type": "ps_guarda", "date": "2026-03-18", "local": "Hospital Paulo Sacramento", "start": "12:22", "end": "19:12", "hours": 6.83, "rate": 97.2, "value": 663.88, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.63}, {"id": "97DA778D-1174-4EEA-BA94-36C12DDEE418", "type": "ps_guarda", "date": "2026-03-19", "local": "Hospital Paulo Sacramento", "start": "13:13", "end": "19:13", "hours": 6.0, "rate": 97.2, "value": 583.2, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.78}, {"id": "3E4E0B4A-7228-4C6E-A6C8-5677135DEDF9", "type": "ps_guarda", "date": "2026-03-20", "local": "Hospital Paulo Sacramento", "start": "13:04", "end": "19:00", "hours": 5.93, "rate": 97.2, "value": 576.4, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.93}, {"id": "4BD093C4-BFAB-4AF3-9BEE-16D41914F969", "type": "sobam_ps", "date": "2026-03-21", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": ""}, {"id": "781D3B77-A933-422D-AA81-CF821C5D4A8B", "type": "ps_guarda", "date": "2026-03-23", "local": "Hospital Paulo Sacramento", "start": "12:33", "end": "18:07", "hours": 5.57, "rate": 97.2, "value": 541.4, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.45}, {"id": "5FF2AD45-002B-4EAB-8CC1-4DFB43F80852", "type": "ps_guarda", "date": "2026-03-24", "local": "Hospital Paulo Sacramento", "start": "13:03", "end": "19:10", "hours": 6.12, "rate": 97.2, "value": 594.86, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.95}, {"id": "48D51DD6-FDA0-403E-897C-9957B3AABD57", "type": "ps_guarda", "date": "2026-03-25", "local": "Hospital Paulo Sacramento", "start": "12:59", "end": "19:09", "hours": 6.17, "rate": 97.2, "value": 599.72, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.02}, {"id": "E2262B48-78A8-44FA-9790-2CFC57FC3D8D", "type": "ps_guarda", "date": "2026-03-26", "local": "Hospital Paulo Sacramento", "start": "13:01", "end": "19:20", "hours": 6.32, "rate": 97.2, "value": 614.3, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.98}, {"id": "0B2FBF3A-9C0D-4C5B-B163-B2C2A85F5AAD", "type": "ps_guarda", "date": "2026-03-27", "local": "Hospital Paulo Sacramento", "start": "13:11", "end": "18:58", "hours": 5.78, "rate": 97.2, "value": 561.82, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.82}, {"id": "34169387-147B-4225-BD62-EB58087D83D3", "type": "ps_guarda", "date": "2026-03-30", "local": "Hospital Paulo Sacramento", "start": "12:53", "end": "18:25", "hours": 5.53, "rate": 97.2, "value": 537.52, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.12}, {"id": "7BDA84AA-ED43-49EA-83A3-719F53A02A42", "type": "ps_guarda", "date": "2026-03-31", "local": "Hospital Paulo Sacramento", "start": "12:53", "end": "19:00", "hours": 6.12, "rate": 97.2, "value": 594.86, "status": "paid", "payDate": "", "expectedPay": "2026-04-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.12}, {"id": "5BDDF266-1279-46DE-849E-AB41FCA7FAC0", "type": "ps_guarda", "date": "2026-04-01", "local": "Hospital Paulo Sacramento", "start": "12:54", "end": "19:01", "hours": 6.12, "rate": 97.2, "value": 594.86, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.12}, {"id": "6F1C6044-DB39-46EB-9CD3-97E47CDA656E", "type": "ps_guarda", "date": "2026-04-02", "local": "Hospital Paulo Sacramento", "start": "13:19", "end": "19:11", "hours": 5.87, "rate": 97.2, "value": 570.56, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.87}, {"id": "6B0D0D0D-AD65-4F8F-9C4E-01B297400862", "type": "ps_guarda", "date": "2026-04-03", "local": "Hospital Paulo Sacramento", "start": "13:08", "end": "18:10", "hours": 5.03, "rate": 97.2, "value": 488.92, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.03}, {"id": "FDBD3AF2-2C46-4BA3-AEF5-37E7EA24F8E5", "type": "ps_guarda", "date": "2026-04-04", "local": "Hospital Paulo Sacramento", "start": "06:55", "end": "13:02", "hours": 6.12, "rate": 97.2, "value": 594.86, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.12}, {"id": "80899BB5-6C5C-4F19-ADC7-0D92E9232067", "type": "ps_guarda", "date": "2026-04-04", "local": "Hospital Paulo Sacramento", "start": "13:03", "end": "18:30", "hours": 5.45, "rate": 97.2, "value": 529.74, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.45}, {"id": "9AA0B0A1-A4BC-4ABC-8925-A2551DB8F6B4", "type": "ps_guarda", "date": "2026-04-05", "local": "Hospital Paulo Sacramento", "start": "07:07", "end": "13:00", "hours": 5.88, "rate": 97.2, "value": 571.54, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.88}, {"id": "3234A75A-41CF-47C0-945C-0A9718D4B12A", "type": "ps_guarda", "date": "2026-04-05", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "18:05", "hours": 5.08, "rate": 97.2, "value": 493.78, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.08}, {"id": "658741CF-724D-4834-8E32-AC7C184A6F62", "type": "ps_guarda", "date": "2026-04-06", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "18:08", "hours": 5.13, "rate": 97.2, "value": 498.64, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.13}, {"id": "D6451DD8-F9A6-4F81-97C5-647C2035216E", "type": "ps_guarda", "date": "2026-04-07", "local": "Hospital Paulo Sacramento", "start": "12:44", "end": "17:58", "hours": 5.23, "rate": 97.2, "value": 508.36, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.23}, {"id": "2B972966-11F1-4571-BE06-459030464F15", "type": "ps_guarda", "date": "2026-04-08", "local": "Hospital Paulo Sacramento", "start": "12:30", "end": "18:59", "hours": 6.48, "rate": 97.2, "value": 629.86, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.48}, {"id": "F56FD512-D723-4F5C-A064-4074DC5C265D", "type": "ps_guarda", "date": "2026-04-09", "local": "Hospital Paulo Sacramento", "start": "12:59", "end": "19:01", "hours": 6.03, "rate": 97.2, "value": 586.12, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.03}, {"id": "AB77E9E7-B5D1-45C5-9782-22EE64885473", "type": "ps_guarda", "date": "2026-04-10", "local": "Hospital Paulo Sacramento", "start": "13:04", "end": "19:03", "hours": 5.98, "rate": 97.2, "value": 581.26, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.98}, {"id": "C7C10473-F038-4CE3-9941-7DC2D69EE423", "type": "sobam_ps", "date": "2026-04-11", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": ""}, {"id": "C8673C01-CBF8-44B7-AB47-3F10C0E4B5B0", "type": "ps_guarda", "date": "2026-04-14", "local": "Hospital Paulo Sacramento", "start": "12:52", "end": "18:20", "hours": 5.47, "rate": 97.2, "value": 531.68, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.47}, {"id": "C4B27824-FB19-4A4A-BDDE-37F5FA072FF5", "type": "ps_guarda", "date": "2026-04-15", "local": "Hospital Paulo Sacramento", "start": "12:44", "end": "19:21", "hours": 6.62, "rate": 97.2, "value": 643.46, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.62}, {"id": "D62147B1-97CA-42FE-9511-0D39245BCB22", "type": "ps_guarda", "date": "2026-04-16", "local": "Hospital Paulo Sacramento", "start": "13:24", "end": "19:25", "hours": 6.02, "rate": 97.2, "value": 585.14, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.02}, {"id": "9EA1579F-40A8-4700-A5F2-7DC5BBB47461", "type": "ps_guarda", "date": "2026-04-17", "local": "Hospital Paulo Sacramento", "start": "13:09", "end": "19:04", "hours": 5.92, "rate": 97.2, "value": 575.42, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.92}, {"id": "DF10199E-F234-4BD4-BD48-6EB7EC332F5A", "type": "ps_guarda", "date": "2026-04-20", "local": "Hospital Paulo Sacramento", "start": "13:15", "end": "18:55", "hours": 5.67, "rate": 97.2, "value": 551.12, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.67}, {"id": "18F0AC33-F358-481B-AC0B-7263B5DE9E06", "type": "ps_guarda", "date": "2026-04-21", "local": "Hospital Paulo Sacramento", "start": "12:39", "end": "19:06", "hours": 6.45, "rate": 97.2, "value": 626.94, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.45}, {"id": "08E7AE7D-70A4-4DE4-9A13-52C02BF91626", "type": "ps_guarda", "date": "2026-04-22", "local": "Hospital Paulo Sacramento", "start": "12:43", "end": "19:12", "hours": 6.48, "rate": 97.2, "value": 629.86, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.48}, {"id": "3CCAC1A6-38DA-4230-89D0-B6F074264747", "type": "ps_guarda", "date": "2026-04-23", "local": "Hospital Paulo Sacramento", "start": "13:23", "end": "19:27", "hours": 6.07, "rate": 97.2, "value": 590.0, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.07}, {"id": "225CE138-CC2F-4198-86C7-243C6FB40360", "type": "ps_guarda", "date": "2026-04-24", "local": "Hospital Paulo Sacramento", "start": "12:39", "end": "18:55", "hours": 6.27, "rate": 97.2, "value": 609.44, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.27}, {"id": "AD0C3058-4693-4136-A7EC-6CC61E745452", "type": "ps_guarda", "date": "2026-04-27", "local": "Hospital Paulo Sacramento", "start": "13:27", "end": "18:44", "hours": 5.28, "rate": 97.2, "value": 513.22, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.28}, {"id": "CC0D8002-7DF1-42F7-9984-60BDDFFB37F0", "type": "sobam_ps", "date": "2026-04-27", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": ""}, {"id": "F5F8FDF8-F680-470E-B043-6C508433D194", "type": "ps_guarda", "date": "2026-04-28", "local": "Hospital Paulo Sacramento", "start": "13:18", "end": "18:05", "hours": 4.78, "rate": 97.2, "value": 464.62, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.78}, {"id": "5CFBDCD5-8A53-489C-9DFE-3C2D9D09FA27", "type": "ps_guarda", "date": "2026-04-29", "local": "Hospital Paulo Sacramento", "start": "13:32", "end": "19:07", "hours": 5.58, "rate": 97.2, "value": 542.38, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.6}, {"id": "AF60CE27-B608-4DB8-B5B1-0B66C86514C9", "type": "ps_guarda", "date": "2026-04-30", "local": "Hospital Paulo Sacramento", "start": "07:25", "end": "13:00", "hours": 5.58, "rate": 97.2, "value": 542.38, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.58}, {"id": "BDD435BF-331C-49F7-AE44-309E3115272B", "type": "ps_guarda", "date": "2026-04-30", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "17:54", "hours": 4.9, "rate": 97.2, "value": 476.28, "status": "paid", "payDate": "", "expectedPay": "2026-05-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.9}, {"id": "D177C6D7-C6C4-484D-AF04-D82FC9279F75", "type": "ps_guarda", "date": "2026-05-01", "local": "Hospital Paulo Sacramento", "start": "13:52", "end": "19:06", "hours": 5.23, "rate": 97.2, "value": 508.36, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.23}, {"id": "940B98FF-537E-4379-9431-496121D09B5A", "type": "ps_guarda", "date": "2026-05-04", "local": "Hospital Paulo Sacramento", "start": "13:09", "end": "18:59", "hours": 5.83, "rate": 97.2, "value": 566.68, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.83}, {"id": "8B86C930-2768-41CE-A29A-01356DEAD0A9", "type": "ps_guarda", "date": "2026-05-05", "local": "Hospital Paulo Sacramento", "start": "12:56", "end": "18:53", "hours": 5.95, "rate": 97.2, "value": 578.34, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.95}, {"id": "B7236A9A-BE34-4C26-8411-EF65DAC5F3B9", "type": "ps_guarda", "date": "2026-05-06", "local": "Hospital Paulo Sacramento", "start": "12:50", "end": "19:03", "hours": 6.22, "rate": 97.2, "value": 604.58, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.22}, {"id": "EF244E96-E84D-4A98-9077-C2162F7D0792", "type": "ps_guarda", "date": "2026-05-07", "local": "Hospital Paulo Sacramento", "start": "13:13", "end": "19:10", "hours": 5.95, "rate": 97.2, "value": 578.34, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.95}, {"id": "F7826B4F-C1F1-4338-8234-CA36E98C0B83", "type": "ps_guarda", "date": "2026-05-08", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "18:57", "hours": 5.95, "rate": 97.2, "value": 578.34, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.95}, {"id": "A06C4763-BFAE-45BD-BB55-FCFEA3F21410", "type": "ps_guarda", "date": "2026-05-09", "local": "Hospital Paulo Sacramento", "start": "07:09", "end": "13:00", "hours": 5.85, "rate": 97.2, "value": 568.62, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.85}, {"id": "6914528C-6926-4151-9CD2-BD7743958CA7", "type": "sobam_ps", "date": "2026-05-09", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": ""}, {"id": "967AA535-D89E-41DF-98B7-D9CDE85691A2", "type": "ps_guarda", "date": "2026-05-10", "local": "Hospital Paulo Sacramento", "start": "07:22", "end": "12:02", "hours": 4.67, "rate": 97.2, "value": 453.92, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.67}, {"id": "69CB73B4-7428-4441-B969-5B95C98BD099", "type": "ps_guarda", "date": "2026-05-11", "local": "Hospital Paulo Sacramento", "start": "07:27", "end": "13:00", "hours": 5.55, "rate": 97.2, "value": 539.46, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.55}, {"id": "1C186AF3-7689-40B9-8E1A-E9A7000F75A0", "type": "ps_guarda", "date": "2026-05-11", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "18:29", "hours": 5.48, "rate": 97.2, "value": 532.66, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.48}, {"id": "A0297122-CD26-4FCF-9AD5-2C1C25D6C9AA", "type": "sobam_ps", "date": "2026-05-11", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": ""}, {"id": "0E81C497-30D4-480E-9D2B-4856ADDB8021", "type": "ps_guarda", "date": "2026-05-12", "local": "Hospital Paulo Sacramento", "start": "13:20", "end": "19:20", "hours": 6.0, "rate": 97.2, "value": 583.2, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.0}, {"id": "3D2DE362-525F-4A9C-8D43-12D7F2C81121", "type": "ps_guarda", "date": "2026-05-13", "local": "Hospital Paulo Sacramento", "start": "13:19", "end": "19:25", "hours": 6.1, "rate": 97.2, "value": 592.92, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.1}, {"id": "70FFA8BF-0CFE-45E6-8CDB-4068B2511B54", "type": "ps_guarda", "date": "2026-05-14", "local": "Hospital Paulo Sacramento", "start": "12:58", "end": "18:53", "hours": 5.92, "rate": 97.2, "value": 575.42, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.92}, {"id": "D6783B7F-9E44-4E5B-A197-9F8A9C6B3FD8", "type": "ps_guarda", "date": "2026-05-15", "local": "Hospital Paulo Sacramento", "start": "12:22", "end": "17:04", "hours": 4.7, "rate": 97.2, "value": 456.84, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.7}, {"id": "2F238118-B0CC-47D4-8D4F-B1D5361CEE76", "type": "sobam_ps", "date": "2026-05-16", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": ""}, {"id": "5704BD7E-E9C5-4AA9-8FCE-27FFB8581384", "type": "ps_guarda", "date": "2026-05-17", "local": "Hospital Paulo Sacramento", "start": "07:05", "end": "12:48", "hours": 5.72, "rate": 97.2, "value": 555.98, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.72}, {"id": "C362D5E4-39AA-4801-9076-54C0F6B5FFD4", "type": "ps_guarda", "date": "2026-05-18", "local": "Hospital Paulo Sacramento", "start": "12:49", "end": "18:56", "hours": 6.12, "rate": 97.2, "value": 594.86, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.12}, {"id": "CDEE3D4E-FD9D-478B-A003-71EE7045648E", "type": "ps_guarda", "date": "2026-05-19", "local": "Hospital Paulo Sacramento", "start": "12:31", "end": "18:13", "hours": 5.7, "rate": 97.2, "value": 554.04, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.7}, {"id": "7DCF17EB-06A3-42E5-A171-D313FB9209A0", "type": "ps_guarda", "date": "2026-05-20", "local": "Hospital Paulo Sacramento", "start": "13:03", "end": "19:23", "hours": 6.33, "rate": 97.2, "value": 615.28, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.33}, {"id": "CA80C8B7-4DF3-4245-B082-A5A56055717A", "type": "ps_guarda", "date": "2026-05-22", "local": "Hospital Paulo Sacramento", "start": "12:57", "end": "19:22", "hours": 6.42, "rate": 97.2, "value": 624.02, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.42}, {"id": "06264131-ED72-439C-B788-7605B533F97E", "type": "sobam_ps", "date": "2026-05-23", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": ""}, {"id": "8938405D-7192-4EF5-AEC5-62A216DD223B", "type": "ps_guarda", "date": "2026-05-25", "local": "Hospital Paulo Sacramento", "start": "07:25", "end": "13:00", "hours": 5.58, "rate": 97.2, "value": 542.38, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.58}, {"id": "E11A5CD4-BCC9-4EB4-8222-1339818A67D8", "type": "ps_guarda", "date": "2026-05-25", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "18:40", "hours": 5.67, "rate": 97.2, "value": 551.12, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.67}, {"id": "DD4296AD-9231-41F4-924C-87538C8804C8", "type": "sobam_ps", "date": "2026-05-25", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": ""}, {"id": "1693F123-7362-411C-AD28-D49CD802BA31", "type": "ps_guarda", "date": "2026-05-26", "local": "Hospital Paulo Sacramento", "start": "13:15", "end": "18:00", "hours": 4.75, "rate": 97.2, "value": 461.7, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.75}, {"id": "6A58D83C-5974-4F9D-A635-0B33BC6D5479", "type": "ps_guarda", "date": "2026-05-27", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:10", "hours": 6.17, "rate": 97.2, "value": 599.72, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.17}, {"id": "229FF1A0-10AD-4F67-957C-4C13B744E370", "type": "ps_guarda", "date": "2026-05-28", "local": "Hospital Paulo Sacramento", "start": "07:02", "end": "13:00", "hours": 5.97, "rate": 97.2, "value": 580.28, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.97}, {"id": "74926A03-8D20-49EF-BC33-21F3606D8719", "type": "ps_guarda", "date": "2026-05-28", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "17:10", "hours": 4.17, "rate": 97.2, "value": 405.32, "status": "paid", "payDate": "", "expectedPay": "2026-06-30", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.17}, {"id": "DA00E682-6591-4247-A1BE-844264DFF92F", "type": "sobam_ps", "date": "2026-05-30", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": ""}, {"id": "1574457E-1E91-4507-AA92-4760DB56007D", "type": "ps_guarda", "date": "2026-06-01", "local": "Hospital Paulo Sacramento", "start": "12:51", "end": "18:56", "hours": 6.08, "rate": 97.2, "value": 590.98, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.15}, {"id": "060A1B0D-8D6C-4E40-94B1-8EB3C1860C5D", "type": "ps_guarda", "date": "2026-06-02", "local": "Hospital Paulo Sacramento", "start": "12:26", "end": "19:08", "hours": 6.7, "rate": 97.2, "value": 651.24, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.57}, {"id": "B3A1C976-599E-4E64-BE1B-3CCA67A8FBD0", "type": "ps_guarda", "date": "2026-06-03", "local": "Hospital Paulo Sacramento", "start": "12:13", "end": "19:22", "hours": 7.15, "rate": 97.2, "value": 694.98, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.78}, {"id": "8A5C5AC8-ADBC-4922-A922-F80B12E8B1E3", "type": "ps_guarda", "date": "2026-06-05", "local": "Hospital Paulo Sacramento", "start": "13:22", "end": "18:43", "hours": 5.35, "rate": 97.2, "value": 520.02, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.63}, {"id": "F62293DD-C8C7-4E87-AA88-96552EFBC8C4", "type": "ps_guarda", "date": "2026-06-08", "local": "Hospital Paulo Sacramento", "start": "12:43", "end": "18:49", "hours": 6.1, "rate": 97.2, "value": 592.92, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.28}, {"id": "1A5E6004-A854-48D6-8E39-D0074925F9F5", "type": "sobam_ps", "date": "2026-06-08", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": ""}, {"id": "CE45C24D-7776-497B-A4BE-9CB44B5EECCF", "type": "ps_guarda", "date": "2026-06-09", "local": "Hospital Paulo Sacramento", "start": "13:12", "end": "19:08", "hours": 5.93, "rate": 97.2, "value": 576.4, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.8}, {"id": "C39A0FCD-B7B3-4528-AC6A-819AD7F58F1F", "type": "ps_guarda", "date": "2026-06-10", "local": "Hospital Paulo Sacramento", "start": "13:26", "end": "19:20", "hours": 5.9, "rate": 97.2, "value": 573.48, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.57}, {"id": "FF8A5985-ED8B-4A17-9C94-8B9708F966E7", "type": "ps_guarda", "date": "2026-06-11", "local": "Hospital Paulo Sacramento", "start": "13:07", "end": "18:43", "hours": 5.6, "rate": 97.2, "value": 544.32, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.88}, {"id": "A3E10E88-3503-455B-B832-79FC563BFAE3", "type": "ps_guarda", "date": "2026-06-12", "local": "Hospital Paulo Sacramento", "start": "12:23", "end": "18:37", "hours": 6.23, "rate": 97.2, "value": 605.56, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.62}, {"id": "1BBA3082-459A-4A13-BC3B-40A1058504F3", "type": "ps_guarda", "date": "2026-06-13", "local": "Hospital Paulo Sacramento", "start": "06:51", "end": "12:42", "hours": 5.85, "rate": 97.2, "value": 568.62, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.85}, {"id": "DF95B461-F2A4-45DB-9E2E-E1AC8358CC42", "type": "sobam_ps", "date": "2026-06-13", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": ""}, {"id": "4F7ED49B-228D-4A6F-AC42-B729876A4CED", "type": "ps_guarda", "date": "2026-06-15", "local": "Hospital Paulo Sacramento", "start": "13:02", "end": "18:56", "hours": 5.9, "rate": 97.2, "value": 573.48, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.97}, {"id": "90D18B5E-5F0A-4B35-81E8-965912CF239B", "type": "ps_guarda", "date": "2026-06-16", "local": "Hospital Paulo Sacramento", "start": "13:02", "end": "19:01", "hours": 5.98, "rate": 97.2, "value": 581.26, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.97}, {"id": "4E247319-AAFD-448F-AB18-9CAAAD0E4F26", "type": "ps_guarda", "date": "2026-06-17", "local": "Hospital Paulo Sacramento", "start": "12:55", "end": "19:04", "hours": 6.15, "rate": 97.2, "value": 597.78, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.08}, {"id": "A15AC012-2FDF-45A7-BCB6-C3DE39EFF82F", "type": "ps_guarda", "date": "2026-06-18", "local": "Hospital Paulo Sacramento", "start": "13:16", "end": "19:20", "hours": 6.07, "rate": 97.2, "value": 590.0, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.73}, {"id": "06A774F8-70DC-4A0F-8F4B-7B9C285C110F", "type": "ps_guarda", "date": "2026-06-19", "local": "Hospital Paulo Sacramento", "start": "13:28", "end": "18:55", "hours": 5.45, "rate": 97.2, "value": 529.74, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.53}, {"id": "734A7A99-1F75-43AB-90CC-AF6CEC367569", "type": "ps_guarda", "date": "2026-06-20", "local": "Hospital Paulo Sacramento", "start": "07:23", "end": "13:07", "hours": 5.73, "rate": 97.2, "value": 556.96, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.73}, {"id": "E635AC2C-62AA-4173-9A07-835E21D3A810", "type": "sobam_ps", "date": "2026-06-20", "local": "SOBAM", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 133.33, "value": 800.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": true, "notes": ""}, {"id": "135CFAA7-F6E9-44B2-9274-35315384A171", "type": "sobam_ps", "date": "2026-06-20", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": true, "notes": ""}, {"id": "B14BDBD6-0BB7-4FF7-8D75-6ADC9E9806BC", "type": "ps_guarda", "date": "2026-06-21", "local": "Hospital Paulo Sacramento", "start": "07:39", "end": "13:45", "hours": 6.1, "rate": 97.2, "value": 592.92, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 6.1}, {"id": "399EF26F-A572-4689-8FA1-82A5E86C04A7", "type": "ps_guarda", "date": "2026-06-22", "local": "Hospital Paulo Sacramento", "start": "13:24", "end": "18:44", "hours": 5.33, "rate": 97.2, "value": 518.08, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.6}, {"id": "760AFD49-3C4E-4F1E-BEE8-3BD5EC6AB80D", "type": "sobam_ps", "date": "2026-06-22", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": true, "notes": ""}, {"id": "767CB985-1DD5-400D-885D-0D48FAF4498F", "type": "ps_guarda", "date": "2026-06-24", "local": "Hospital Paulo Sacramento", "start": "07:23", "end": "13:00", "hours": 5.62, "rate": 97.2, "value": 546.26, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.62}, {"id": "PONTO-JUN-2026-06-24-1", "type": "ps_guarda", "date": "2026-06-24", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:44", "hours": 6.73, "rate": 97.2, "value": 654.16, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "pontoSistemaHoras": 4.0, "notes": "Lançado pelo ponto"}, {"id": "69B2FE18-31BF-4092-AE47-E248EAD1AA66", "type": "ps_guarda", "date": "2026-06-25", "local": "Hospital Paulo Sacramento", "start": "13:45", "end": "17:49", "hours": 4.07, "rate": 97.2, "value": 395.6, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.07}, {"id": "CEA91B9C-3DE2-4078-B0D7-64FBF8045F7E", "type": "ps_guarda", "date": "2026-06-26", "local": "Hospital Paulo Sacramento", "start": "13:26", "end": "18:46", "hours": 5.33, "rate": 97.2, "value": 518.08, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.57}, {"id": "1ED0DC1A-5302-4A9C-A341-6E27FA26B5D9", "type": "sobam_ps", "date": "2026-06-26", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": true, "notes": ""}, {"id": "8D5CA24F-200B-4850-B99F-E3C38079DF1A", "type": "sobam_ps", "date": "2026-06-27", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": true, "notes": ""}, {"id": "25C29460-CF6C-4783-B097-F367E68DF706", "type": "ps_guarda", "date": "2026-06-29", "local": "Hospital Paulo Sacramento", "start": "07:18", "end": "13:00", "hours": 5.7, "rate": 97.2, "value": 554.04, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 5.7}, {"id": "F9CFD7AA-7FCF-48EF-B305-C33175D42BDA", "type": "ps_guarda", "date": "2026-06-29", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "18:38", "hours": 5.63, "rate": 97.2, "value": 547.24, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 4.0}, {"id": "59DC7B00-C66D-4A1E-A159-54781CFB0E80", "type": "sobam_ps", "date": "2026-06-29", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": true, "notes": ""}, {"id": "D2DA1C65-81AD-4B01-97E0-4FD71AC81B91", "type": "ps_guarda", "date": "2026-06-30", "local": "Hospital Paulo Sacramento", "start": "13:35", "end": "18:46", "hours": 5.18, "rate": 97.2, "value": 503.5, "status": "pend", "payDate": "", "expectedPay": "2026-07-31", "pontoConfirmado": true, "notes": "", "pontoSistemaHoras": 3.42}, {"id": "22E4B261-437A-4445-A6C2-46A1261680ED", "type": "ps_guarda", "date": "2026-07-01", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "74F9D7E5-72AA-47E5-8D0A-9E7D0D883047", "type": "ps_guarda", "date": "2026-07-02", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "2C81DC74-498B-456C-AAA0-C8D989EE4CE9", "type": "ps_guarda", "date": "2026-07-03", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "A1B2A3B4-E255-4ED4-BDA5-41AE116D4E3B", "type": "ps_guarda", "date": "2026-07-06", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "93EB876F-C5AC-4D7D-B2D1-BCE8F81A2D9E", "type": "ps_guarda", "date": "2026-07-07", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "264C7F7E-3BE4-4EB4-B7F6-586D08A05643", "type": "ps_guarda", "date": "2026-07-08", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "053AA840-C9E2-4134-A7BD-A4E4DD22E5F6", "type": "ps_guarda", "date": "2026-07-09", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "B73DBE86-EDD7-4C41-8203-E57EAE5ABDD4", "type": "ps_guarda", "date": "2026-07-10", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "5F004DEE-7AA1-4194-8554-F3FAB258A0B2", "type": "ps_guarda", "date": "2026-07-11", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "AF527C39-2278-429F-AAF0-D2494A41F1A6", "type": "sobam_ps", "date": "2026-07-11", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": true, "notes": ""}, {"id": "A18DED85-C7B3-40DA-9B0A-10937B9FB801", "type": "ps_guarda", "date": "2026-07-12", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "E7621EA5-7241-42A3-BF2E-A4C3AEE5C0B6", "type": "ps_guarda", "date": "2026-07-13", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "603DAF8C-AEA8-4B9A-A264-82F7B28723C2", "type": "sobam_ps", "date": "2026-07-13", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": true, "notes": ""}, {"id": "2C148982-383B-46AE-BEA4-FB21B9B67E3F", "type": "ps_guarda", "date": "2026-07-14", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "C73395BA-88B9-4D3C-801F-21227060E11A", "type": "ps_guarda", "date": "2026-07-15", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "FF956FA7-CD23-40CD-98F3-C3F3EBE52048", "type": "ps_guarda", "date": "2026-07-16", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "66EE0BDF-2739-467D-88B7-5FD02DDED51B", "type": "ps_guarda", "date": "2026-07-17", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "17:00", "hours": 4.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "0B54FBB9-2478-4165-B0F0-1E43E5E89004", "type": "ps_guarda", "date": "2026-07-18", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "17:00", "hours": 4.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "6422CB8A-3C6B-4240-A7A4-04F3C2F42E3C", "type": "sobam_ps", "date": "2026-07-18", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": true, "notes": ""}, {"id": "3575E88A-9582-44BE-A6A0-CE92D8729572", "type": "ps_guarda", "date": "2026-07-20", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "5EBF5E9A-F50B-44CF-84B3-86A8AB0D721C", "type": "sobam_ps", "date": "2026-07-20", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": true, "notes": ""}, {"id": "0099CBD5-C888-4E06-9E06-C15934175C87", "type": "ps_guarda_vs", "date": "2026-07-21", "local": "Hospital Paulo Sacramento", "start": "07:00", "end": "08:00", "hours": 1.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "9D928BA2-5009-432B-9E5A-612FC2409600", "type": "ps_guarda_vs", "date": "2026-07-22", "local": "Hospital Paulo Sacramento", "start": "07:00", "end": "08:00", "hours": 1.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "C2FA5F5E-A453-4E33-8CC4-E6D318C1D7C9", "type": "ps_guarda_vs", "date": "2026-07-23", "local": "Hospital Paulo Sacramento", "start": "07:00", "end": "08:00", "hours": 1.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "CD7699A4-3CA5-4E84-A064-1A69ACF0B0F2", "type": "ps_guarda_vs", "date": "2026-07-24", "local": "Hospital Paulo Sacramento", "start": "07:00", "end": "08:00", "hours": 1.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "1A053C67-14B9-4392-AA89-E9B657567D28", "type": "ps_guarda_vs", "date": "2026-07-25", "local": "Hospital Paulo Sacramento", "start": "07:00", "end": "13:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "F7B187B8-6C16-49BC-9C54-DF17D0376A1C", "type": "sobam_ps", "date": "2026-07-25", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": true, "notes": ""}, {"id": "F308264A-C8F2-4720-979A-A074604A6E42", "type": "ps_guarda_vs", "date": "2026-07-26", "local": "Hospital Paulo Sacramento", "start": "07:00", "end": "13:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "773B3539-BBD3-441B-88E9-D4A1C86BA620", "type": "ps_guarda_vs", "date": "2026-07-27", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "24A8909D-8036-4E43-B726-6455A48A8ED4", "type": "sobam_ps", "date": "2026-07-27", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": true, "notes": ""}, {"id": "CD9ECBAD-22A1-4E54-9095-062AF8213FBD", "type": "ps_guarda_vs", "date": "2026-07-29", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "8A5C4BBB-A08F-414D-9E95-708BD0BFF221", "type": "ps_guarda_vs", "date": "2026-07-30", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "B7194125-62ED-4824-8467-8C66C5ACB743", "type": "ps_guarda_vs", "date": "2026-07-31", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-08-31", "pontoConfirmado": false, "notes": ""}, {"id": "916F8EF6-D91D-4F80-8C6D-C903AE9ED993", "type": "ps_guarda_vs", "date": "2026-08-03", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "549444F0-D99F-43A3-B950-A78096079D2F", "type": "sobam_ps", "date": "2026-08-03", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": true, "notes": ""}, {"id": "66C44269-087E-4CEB-AE5B-B8FDEABCA78D", "type": "ps_guarda_vs", "date": "2026-08-04", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "19D33C06-00ED-4075-9CE1-459AF85D0FB5", "type": "ps_guarda_vs", "date": "2026-08-05", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "D3CE237A-416D-44D3-B7D5-78B63FF289E4", "type": "ps_guarda_vs", "date": "2026-08-06", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "4FB766EA-9861-41C1-998D-72325DA02911", "type": "ps_guarda_vs", "date": "2026-08-07", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 148.0, "value": 888.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "675766EB-67C2-42CF-ADD1-23502176CAF6", "type": "sobam_ps", "date": "2026-08-08", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": true, "notes": ""}, {"id": "FE707BDD-D937-4838-9C41-848B78F4802A", "type": "ps_guarda", "date": "2026-08-10", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "2FC3AE45-A0A0-46C6-952A-410935C920DA", "type": "sobam_ps", "date": "2026-08-10", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": true, "notes": ""}, {"id": "8C7DF940-CFDD-45C2-8D8A-04DECC8A004D", "type": "ps_guarda", "date": "2026-08-11", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "71530A00-4F2E-4F22-A951-C2AD4CAF9F93", "type": "ps_guarda", "date": "2026-08-12", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "DE88876E-07D1-4048-8EDB-7282164C44B1", "type": "ps_guarda", "date": "2026-08-13", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "6B95D057-9CCF-4423-AAD3-A3ACA30DDD77", "type": "ps_guarda", "date": "2026-08-14", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "432A7720-DFE3-4BF2-BE5C-CEE1782E07F5", "type": "sobam_ps", "date": "2026-08-15", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": true, "notes": ""}, {"id": "04A1D49E-1D06-4E2B-A5CC-25137120E549", "type": "sobam_ps", "date": "2026-08-16", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-10-31", "pontoConfirmado": true, "notes": ""}, {"id": "D35614DA-10D4-4341-ACF5-7A8DAD17E3C4", "type": "ps_guarda", "date": "2026-08-17", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "9C650664-675C-4386-90F9-D02BB69E26B1", "type": "sobam_ps", "date": "2026-08-17", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-10-31", "pontoConfirmado": true, "notes": ""}, {"id": "B32D680A-F5DF-46D1-9EEE-0B972B678BC4", "type": "ps_guarda", "date": "2026-08-18", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "D9A1DD99-6CDF-4EF7-9CB5-5109A129BD5D", "type": "ps_guarda", "date": "2026-08-19", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "80CC839F-4A70-4AAB-AEE3-09F021178733", "type": "ps_guarda", "date": "2026-08-20", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "428C0C01-67AC-4DD8-9CA0-14D99C042F5F", "type": "ps_guarda", "date": "2026-08-21", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "EBBB0164-DBEB-4288-89C7-E263300F2626", "type": "sobam_ps", "date": "2026-08-21", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-10-31", "pontoConfirmado": true, "notes": ""}, {"id": "D3CC4D79-620F-4B28-A456-E3EFE6D7376C", "type": "sobam_ps", "date": "2026-08-22", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-10-31", "pontoConfirmado": true, "notes": ""}, {"id": "891BC83F-745F-4E3E-8DE1-720FFE9C911A", "type": "ps_guarda", "date": "2026-08-24", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "F9CA00D3-537C-4466-AF61-736B54CEBC03", "type": "sobam_ps", "date": "2026-08-24", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-10-31", "pontoConfirmado": true, "notes": ""}, {"id": "4B7801B5-9D85-4C09-BE24-41156A738387", "type": "ps_guarda", "date": "2026-08-25", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "1DBB65FE-C0BB-4170-8D47-EF97FA6DF406", "type": "ps_guarda", "date": "2026-08-26", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "85976532-CC25-49ED-A66D-E86CEA71EA37", "type": "ps_guarda", "date": "2026-08-27", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "50EBEA77-16CD-4022-8328-C766004B4FED", "type": "ps_guarda", "date": "2026-08-28", "local": "Hospital Paulo Sacramento", "start": "13:00", "end": "19:00", "hours": 6.0, "rate": 97.2, "value": 729.0, "status": "pend", "payDate": "", "expectedPay": "2026-09-30", "pontoConfirmado": false, "notes": ""}, {"id": "BFDB3917-44DC-4EC7-A70D-B364FFDADFB3", "type": "sobam_ps", "date": "2026-08-28", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 138.54, "value": 1662.5, "status": "pend", "payDate": "", "expectedPay": "2026-10-31", "pontoConfirmado": true, "notes": ""}, {"id": "1AC0C805-B60D-4857-BE49-F421F84A04D9", "type": "sobam_ps", "date": "2026-08-29", "local": "SOBAM", "start": "19:00", "end": "07:00", "hours": 12.0, "rate": 158.33, "value": 1900.0, "status": "pend", "payDate": "", "expectedPay": "2026-10-31", "pontoConfirmado": true, "notes": ""}];;
+
+const SEED_VERSION = 8;
+function shiftsKey(){ return "pl_shifts::"+currentUser; }
+function seedvKey(){ return "pl_seedv::"+currentUser; }
+function load(){
+  try{
+    const raw = store.get(shiftsKey());
+    const sv = parseInt(store.get(seedvKey())||"0",10);
+    // Só o gabrielcm recebe a base pré-carregada (dados reais). Demais começam vazios.
+    if(currentUser==="gabrielcm" && sv<SEED_VERSION){
+      shifts = SEED.slice();
+      store.set(seedvKey(), String(SEED_VERSION));
+      save();
+    } else {
+      shifts = raw ? JSON.parse(raw) : [];
+    }
+  }catch(e){ shifts = []; }
+  migrate();
+}
+function save(){
+  if(!currentUser) return;
+  store.set(shiftsKey(), JSON.stringify(shifts));
+}
+/* Preenche tipo e previsão de pagamento em plantões antigos/importados */
+function inferTipo(s){
+  if(s.type) return s.type;
+  if(s.local==="SOBAM") return "sobam_ps";
+  if(s.local==="Hospital Paulo Sacramento") return "ps_pediatria";
+  return "outro";
+}
+function migrate(){
+  let changed=false;
+  shifts.forEach(s=>{
+    if(!s.type){ s.type=inferTipo(s); changed=true; }
+    if(!s.expectedPay){ s.expectedPay=expectedPayDate(s.date, s.local); changed=true; }
+    if(s.pontoConfirmado===undefined){ s.pontoConfirmado = !(s.type==="ps_guarda"||s.type==="ps_guarda_vs"); changed=true; }
+  });
+  if(changed) save();
+}
+
+/* ================= Helpers ================= */
+function brl(n){
+  return (n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function pad(n){ return String(n).padStart(2,"0"); }
+function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function parseDate(s){ const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
+function fmtDate(s){ if(!s) return "—"; const d=parseDate(s); return pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear(); }
+function monthKey(s){ return s.slice(0,7); } // YYYY-MM
+function monthLabel(key){ const [y,m]=key.split("-").map(Number); return MONTHS[m-1]+" de "+y; }
+
+function calcHours(start,end){
+  if(!start||!end) return 0;
+  const [sh,sm]=start.split(":").map(Number);
+  const [eh,em]=end.split(":").map(Number);
+  let mins = (eh*60+em)-(sh*60+sm);
+  if(mins<=0) mins += 24*60; // vira a madrugada
+  return Math.round((mins/60)*100)/100;
+}
+function isWeekend(dateStr){ const wd=parseDate(dateStr).getDay(); return wd===0||wd===6; } // dom/sáb
+function lastDayOfMonth(y,mIndex){ const d=new Date(y,mIndex+1,0); return ymd(d); } // mIndex pode passar de 11
+/* Regras de data de pagamento:
+   SOBAM: ciclo do dia 16 (mês x-1) ao dia 15 (mês x) é pago no fim do mês x+1.
+          → dia>=16: fecha no mês seguinte → paga fim de (mês+2); dia<=15: paga fim de (mês+1).
+   Paulo Sacramento: fim do mês seguinte ao plantão. */
+function expectedPayDate(dateStr, local){
+  if(!dateStr) return "";
+  const d=parseDate(dateStr), y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
+  if(local==="SOBAM"){ return lastDayOfMonth(y, m + (day>=16?2:1)); }
+  if(local==="Hospital Paulo Sacramento"){ return lastDayOfMonth(y, m+1); }
+  return lastDayOfMonth(y, m+1); // padrão: fim do mês seguinte
+}
+
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+/* ================= Abas ================= */
+function switchTab(tab){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===tab));
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  document.getElementById("view-"+tab).classList.add("active");
+  if(tab==="list") renderList();
+  if(tab==="summary") renderSummary();
+  if(tab==="calendar") renderCalendar();
+  if(tab==="escala") renderEscala();
+  if(tab==="importar") impInit();
+  if(tab==="perfil") renderPerfil();
+  if(tab==="outros") applyTheme(document.body.classList.contains("light")?"light":"dark");
+}
+function renderPerfil(){
+  const u=userByLogin(currentUser); if(!u) return;
+  gv("perfilAv").textContent=iniciais(u.nome);
+  gv("perfilNome").textContent=u.nome;
+  gv("perfilLogin").textContent=currentUser;
+  const horas=sum(shifts,"hours");
+  const curKey=ymd(today).slice(0,7);
+  const horasMes=sum(shifts.filter(s=>monthKey(s.date)===curKey),"hours");
+  const recv=sum(shifts.filter(s=>s.status==="paid"),"value");
+  const pend=sum(shifts.filter(s=>s.status==="pend"),"value");
+  gv("perfStats").innerHTML=`
+    <div class="tile total"><div class="lbl">Plantões</div><div class="val">${shifts.length}</div></div>
+    <div class="tile total"><div class="lbl">Horas totais</div><div class="val">${decToHM(horas)}</div></div>
+    <div class="tile total"><div class="lbl">Horas em ${MONTHS[today.getMonth()]}</div><div class="val">${decToHM(horasMes)}</div></div>
+    <div class="tile received"><div class="lbl">Já recebido</div><div class="val">${brl(recv)}</div></div>
+    <div class="tile pending"><div class="lbl">A receber</div><div class="val">${brl(pend)}</div></div>`;
+}
+async function trocarSenha(){
+  const err=gv("cpErr"); err.style.color=""; err.textContent="";
+  const p1=gv("cpPass1").value||"", p2=gv("cpPass2").value||"";
+  if(p1.length<8){ err.textContent="A senha deve ter pelo menos 8 caracteres."; return; }
+  if(p1!==p2){ err.textContent="As senhas não coincidem."; return; }
+  if(p1===PROV_PASS){ err.textContent="Escolha uma senha diferente da provisória."; return; }
+  const users=dbUsers(); users[currentUser]={passHash: await sha256(p1)}; saveUsers(users);
+  gv("cpPass1").value=""; gv("cpPass2").value="";
+  err.style.color="var(--green)"; err.textContent="Senha atualizada!";
+  setTimeout(()=>{ err.textContent=""; err.style.color=""; },2500);
+}
+
+/* ================= Escala fixa (recorrentes) ================= */
+function escalaKey(){ return "pl_escala::"+currentUser; }
+function loadEscala(){ try{ return JSON.parse(store.get(escalaKey())||"[]"); }catch(e){ return []; } }
+function saveEscala(arr){ store.set(escalaKey(), JSON.stringify(arr)); }
+let esDiasSel=new Set();
+function renderEscala(){
+  const wrap=gv("esDias");
+  if(!wrap.dataset.built){
+    wrap.innerHTML=DOW.map((d,i)=>`<span class="time-chip es-dia" data-d="${i}" onclick="esToggleDia(${i},this)">${d}</span>`).join("");
+    wrap.dataset.built="1";
+  }
+  if(!gv("esMonth").value) gv("esMonth").value=ymd(today).slice(0,7);
+  refreshDatalist();
+  esApplyTipo();
+  // lista de regras
+  const rules=loadEscala();
+  const box=gv("escalaList");
+  if(!rules.length){ box.innerHTML='<div class="empty-state" style="padding:20px"><div class="big">🔁</div>Nenhuma regra ainda. Cadastre acima os plantões que se repetem.</div>'; return; }
+  box.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Serviço</th><th>Dias</th><th>Horário</th><th>Local</th><th>Valor</th><th></th></tr></thead><tbody>`+
+    rules.map((r,i)=>`<tr>
+      <td>${escapeHtml(SERVICOS[r.tipo]||r.tipo)}</td>
+      <td>${r.dias.map(d=>DOW[d]).join(", ")}</td>
+      <td>${r.start}–${r.end}</td>
+      <td>${escapeHtml(r.local||"—")}</td>
+      <td class="val">${r.tipo==="sobam_ps"?"dia útil/FDS":brl(r.value)}</td>
+      <td><button class="btn small danger" onclick="delEscala(${i})">Excluir</button></td>
+    </tr>`).join("")+`</tbody></table></div>`;
+}
+function esToggleDia(i,el){ if(esDiasSel.has(i)){esDiasSel.delete(i);el.style.background="";el.style.color="";} else {esDiasSel.add(i);el.style.background="var(--accent)";el.style.color="#04283a";} }
+function esApplyTipo(){
+  const t=TIPOS[gv("esTipo").value];
+  if(t.local) gv("esLocal").value=t.local;
+  if(t.mode==="enfermaria"){ gv("esRate").value=t.rate.toFixed(2); gv("esRate").readOnly=true; esRecalc(); }
+  else if(t.mode==="fixed_wd"){ gv("esRate").value=""; gv("esRate").readOnly=true; gv("esValue").value=t.weekday.toFixed(2); }
+  else { gv("esRate").readOnly=false; }
+}
+function esRecalc(){
+  const t=TIPOS[gv("esTipo").value];
+  if(t.mode==="enfermaria" || (t.mode==="manual" && parseFloat(gv("esRate").value)>0)){
+    const h=calcHours(gv("esStart").value, gv("esEnd").value);
+    const r=parseFloat(gv("esRate").value)||0;
+    if(r>0) gv("esValue").value=round2(h*r);
+  }
+}
+function addEscala(){
+  if(!esDiasSel.size){ gv("esHint").innerHTML='<span style="color:var(--amber)">Selecione ao menos um dia da semana.</span>'; return; }
+  const rule={ tipo:gv("esTipo").value, dias:[...esDiasSel].sort(), start:gv("esStart").value, end:gv("esEnd").value,
+    local:gv("esLocal").value.trim(), rate:parseFloat(gv("esRate").value)||0, value:round2(parseFloat(gv("esValue").value)||0) };
+  if(!rule.start||!rule.end){ gv("esHint").innerHTML='<span style="color:var(--amber)">Preencha início e fim.</span>'; return; }
+  const arr=loadEscala(); arr.push(rule); saveEscala(arr);
+  esDiasSel.clear(); gv("esDias").querySelectorAll(".es-dia").forEach(c=>{c.style.background="";c.style.color="";});
+  gv("esHint").innerHTML='<span style="color:var(--green)">Regra adicionada.</span>';
+  renderEscala();
+}
+function delEscala(i){ const arr=loadEscala(); arr.splice(i,1); saveEscala(arr); renderEscala(); }
+function gerarEscala(){
+  const mk=gv("esMonth").value; if(!mk){ gv("esGenHint").textContent="Escolha o mês."; return; }
+  const rules=loadEscala(); if(!rules.length){ gv("esGenHint").textContent="Cadastre uma regra primeiro."; return; }
+  const paid=gv("esStatusPaid").checked;
+  const [y,m]=mk.split("-").map(Number);
+  const dim=new Date(y,m,0).getDate();
+  let criados=0, pulados=0;
+  for(let d=1;d<=dim;d++){
+    const date=`${y}-${pad(m)}-${pad(d)}`;
+    const wd=new Date(y,m-1,d).getDay();
+    rules.forEach(r=>{
+      if(!r.dias.includes(wd)) return;
+      // dedup por data+início+fim+tipo
+      if(shifts.some(s=>s.date===date && s.start===r.start && s.end===r.end && s.type===r.tipo)){ pulados++; return; }
+      const t=TIPOS[r.tipo];
+      let value=r.value, rate=r.rate;
+      if(r.tipo==="sobam_ps"){ value = isWeekend(date)?t.weekend:t.weekday; rate = round2(value/(calcHours(r.start,r.end)||1)); }
+      const enfer = (r.tipo==="ps_guarda"||r.tipo==="ps_guarda_vs");
+      shifts.push({ id:uid(), type:r.tipo, date, local:r.local||(t.local||""), start:r.start, end:r.end,
+        hours:calcHours(r.start,r.end), rate:rate, value:round2(value),
+        status:paid?"paid":"pend", payDate:paid?expectedPayDate(date,r.local||t.local):"",
+        expectedPay:expectedPayDate(date, r.local||t.local),
+        pontoConfirmado: enfer? false : true, notes:"Escala fixa" });
+      criados++;
+    });
+  }
+  save(); refreshAll();
+  gv("esGenHint").innerHTML=`<b style="color:var(--green)">${criados} plantão(ões) criado(s)</b>${pulados?` · ${pulados} já existiam (pulados)`:''} em ${monthLabel(mk)}.`;
+  toast(`${criados} plantão(ões) gerado(s) pela escala`);
+}
+
+/* ================= Formulário ================= */
+function gv(id){ return document.getElementById(id); }
+function hoursNow(){ return parseFloat(gv("fHours").value)||calcHours(gv("fStart").value,gv("fEnd").value); }
+function round2(n){ return Math.round(n*100)/100; }
+
+function openForm(dateStr){
+  document.getElementById("shiftForm").reset();
+  gv("fId").value="";
+  gv("modalTitle").textContent="Novo plantão";
+  gv("delBtn").style.display="none";
+  gv("fValue").value=""; gv("fHours").value=""; gv("fRate").value="";
+  gv("fTipo").value="outro";
+  gv("fStatus").value="pend";
+  gv("fPayDate").value="";
+  gv("fPonto").checked=false;
+  clearOCR();
+  if(dateStr) gv("fDate").value=dateStr;
+  applyTipo();
+  togglePayDate();
+  refreshDatalist();
+  gv("overlay").classList.add("show");
+  setTimeout(()=>gv("fDate").focus(),50);
+}
+function editShift(id){
+  const s=shifts.find(x=>x.id===id); if(!s) return;
+  clearOCR();
+  gv("fId").value=s.id;
+  gv("fTipo").value=s.type||inferTipo(s);
+  gv("fPonto").checked=!!s.pontoConfirmado;
+  gv("fDate").value=s.date;
+  gv("fLocal").value=s.local;
+  gv("fStart").value=s.start;
+  gv("fEnd").value=s.end;
+  gv("fHours").value=s.hours;
+  gv("fRate").value=s.rate;
+  gv("fValue").value=s.value;
+  gv("fStatus").value=s.status;
+  gv("fPayDate").value=s.payDate||"";
+  gv("fNotes").value=s.notes||"";
+  gv("modalTitle").textContent="Editar plantão";
+  gv("delBtn").style.display="inline-flex";
+  applyModeUI();               // ajusta readonly/visibilidade sem sobrescrever valores salvos
+  updatePayBox();
+  togglePayDate();
+  refreshDatalist();
+  gv("overlay").classList.add("show");
+}
+function closeForm(){ gv("overlay").classList.remove("show"); }
+
+function togglePayDate(){
+  const paid = gv("fStatus").value==="paid";
+  gv("payDateWrap").style.opacity = paid?1:.55;
+  const pd=gv("fPayDate");
+  if(paid && !pd.value){
+    const exp=expectedPayDate(gv("fDate").value, gv("fLocal").value.trim());
+    pd.value = exp || ymd(today);
+  }
+}
+
+/* ---- Modo de valor conforme o tipo ---- */
+function currentTipo(){ return TIPOS[gv("fTipo").value] || TIPOS.outro; }
+function applyModeUI(){
+  const t=currentTipo();
+  const rate=gv("fRate"), val=gv("fValue"), wrap=gv("pontoWrap");
+  wrap.style.display = (t.mode==="enfermaria") ? "" : "none";
+  if(t.mode==="enfermaria"){ rate.readOnly=true; val.readOnly=gv("fPonto").checked; }
+  else if(t.mode==="hourly"){ rate.readOnly=true; val.readOnly=true; }
+  else if(t.mode==="fixed_wd"){ rate.readOnly=true; val.readOnly=false; }
+  else { rate.readOnly=false; val.readOnly=false; }
+}
+/* Trocar tipo: define local, valor sugerido/provisório e previsão */
+function applyTipo(){
+  const t=currentTipo();
+  if(t.local) gv("fLocal").value=t.local;
+  applyModeUI();
+  const h=hoursNow(), date=gv("fDate").value;
+  if(t.mode==="enfermaria"){
+    gv("fRate").value=t.rate.toFixed(2);
+    gv("fValue").value = gv("fPonto").checked ? (h? round2(h*t.rate) : "") : t.fixo.toFixed(2);
+  } else if(t.mode==="hourly"){
+    gv("fRate").value=t.rate.toFixed(2);
+    gv("fValue").value=round2(h*t.rate)||"";
+  } else if(t.mode==="fixed_wd"){
+    const v = date && isWeekend(date) ? t.weekend : t.weekday;
+    gv("fValue").value=v.toFixed(2);
+    gv("fRate").value = h ? round2(v/h).toFixed(2) : "";
+  }
+  updatePayBox();
+}
+/* Marcar/desmarcar "calcular pelo ponto" numa enfermaria */
+function onPontoToggle(){
+  const t=currentTipo(); applyModeUI();
+  const h=hoursNow();
+  if(gv("fPonto").checked){ gv("fValue").value = h? round2(h*t.rate) : ""; }
+  else { gv("fValue").value = t.fixo.toFixed(2); }
+  updatePayBox();
+}
+/* Mudança de data: SOBAM depende de dia útil/fim de semana; demais só atualizam previsão */
+function onDateChange(){
+  if(currentTipo().mode==="fixed_wd"){ applyTipo(); }
+  updatePayBox();
+}
+function recalc(){
+  const start=gv("fStart").value, end=gv("fEnd").value;
+  if(start&&end){ gv("fHours").value=calcHours(start,end); }
+  const t=currentTipo();
+  if(t.mode==="enfermaria"){ if(gv("fPonto").checked){ gv("fValue").value=round2(hoursNow()*t.rate); } }
+  else if(t.mode==="hourly"||t.mode==="fixed_wd"){ applyTipo(); }
+  else { updateValueFromRate(); }
+  updatePayBox();
+}
+function recalcFromHours(){
+  const t=currentTipo();
+  if(t.mode==="enfermaria"){ if(gv("fPonto").checked){ gv("fValue").value=round2(hoursNow()*t.rate); } }
+  else if(t.mode==="hourly"||t.mode==="fixed_wd"){ applyTipo(); }
+  else { updateValueFromRate(); }
+}
+function updateValueFromRate(){
+  const h=parseFloat(gv("fHours").value)||0, r=parseFloat(gv("fRate").value)||0;
+  if(r>0) gv("fValue").value=round2(h*r);
+}
+function onRateInput(){ if(currentTipo().mode==="manual"){ updateValueFromRate(); } }
+function onValueInput(){
+  const h=parseFloat(gv("fHours").value)||0, v=parseFloat(gv("fValue").value)||0;
+  if(h>0 && !gv("fRate").readOnly){ gv("fRate").value=round2(v/h); }
+}
+function updatePayBox(){
+  const date=document.getElementById("fDate").value;
+  const local=document.getElementById("fLocal").value.trim();
+  const box=document.getElementById("payBox");
+  if(!date){ box.innerHTML="Preencha a data para calcular a previsão de pagamento."; return; }
+  const exp=expectedPayDate(date, local);
+  let regra = local==="SOBAM" ? "SOBAM: ciclo dia 16→15, pago no fim do mês seguinte ao fechamento"
+            : local==="Hospital Paulo Sacramento" ? "Paulo Sacramento: fim do mês seguinte ao plantão"
+            : "fim do mês seguinte (padrão)";
+  box.innerHTML=`💸 Previsão de recebimento: <b>${fmtDate(exp)}</b> &nbsp;·&nbsp; <span class="hint">${regra}</span>`;
+  updateTipoWarn();
+}
+function updateTipoWarn(){
+  const w=gv("tipoWarn"); if(!w) return;
+  const tipo=gv("fTipo").value, date=gv("fDate").value;
+  if(tipo==="ps_guarda_vs" && date && date<GUARDA_VS_INICIO){
+    w.style.display="";
+    w.innerHTML=`⚠️ <b style="color:var(--amber)">Guarda VS só existe a partir de 21/07/2026.</b> Antes dessa data os plantões de enfermaria são apenas <b>Guarda</b> (R$97,20/h). Troque o tipo para "Enfermaria Guarda".`;
+  } else { w.style.display="none"; }
+}
+
+function saveShift(e){
+  e.preventDefault();
+  const id=document.getElementById("fId").value;
+  const hours=parseFloat(document.getElementById("fHours").value)||0;
+  const rate=parseFloat(document.getElementById("fRate").value)||0;
+  const value=parseFloat(document.getElementById("fValue").value)||0;
+  const status=document.getElementById("fStatus").value;
+  const date=document.getElementById("fDate").value;
+  const local=document.getElementById("fLocal").value.trim();
+  const tipoObj=currentTipo();
+  const data={
+    id: id||uid(),
+    type: document.getElementById("fTipo").value,
+    date: date,
+    local: local,
+    start: document.getElementById("fStart").value,
+    end: document.getElementById("fEnd").value,
+    hours: hours,
+    rate: rate,
+    value: Math.round(value*100)/100,
+    status: status,
+    payDate: status==="paid" ? (document.getElementById("fPayDate").value||expectedPayDate(date,local)) : "",
+    expectedPay: expectedPayDate(date, local),
+    pontoConfirmado: tipoObj.mode==="enfermaria" ? document.getElementById("fPonto").checked : true,
+    notes: document.getElementById("fNotes").value.trim()
+  };
+  if(id){
+    const i=shifts.findIndex(x=>x.id===id); shifts[i]=data;
+    toast("Plantão atualizado");
+  }else{
+    shifts.push(data);
+    toast("Plantão registrado");
+  }
+  save(); closeForm(); refreshAll();
+}
+
+/* ================= OCR — foto do ponto ================= */
+function clearOCR(){ document.getElementById("ocrResult").innerHTML=""; document.getElementById("ocrStatus").textContent="Tire/anexe a foto do ponto eletrônico e eu tento ler os horários automaticamente."; const f=document.getElementById("ocrFile"); if(f) f.value=""; }
+async function runOCR(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  const st=document.getElementById("ocrStatus"), res=document.getElementById("ocrResult");
+  if(typeof Tesseract==="undefined"){
+    st.innerHTML='<span style="color:var(--amber)">Leitor de imagem não carregou (precisa de internet na 1ª vez). Digite os horários manualmente.</span>';
+    return;
+  }
+  st.innerHTML='<span class="spin"></span> Lendo a foto…';
+  res.innerHTML="";
+  try{
+    const { data } = await Tesseract.recognize(file, "eng", {
+      logger: m => { if(m.status==="recognizing text") st.innerHTML='<span class="spin"></span> Lendo a foto… '+Math.round(m.progress*100)+'%'; }
+    });
+    const text=data.text||"";
+    // extrai horários HH:MM (aceita h ou . como separador)
+    const found=[]; const re=/\b([01]?\d|2[0-3])[:hH.]([0-5]\d)\b/g; let m;
+    while((m=re.exec(text))!==null){ found.push(pad(+m[1])+":"+m[2]); }
+    const uniq=[...new Set(found)];
+    if(uniq.length>=2){
+      document.getElementById("fStart").value=uniq[0];
+      document.getElementById("fEnd").value=uniq[1];
+      recalc();
+    }
+    st.innerHTML = uniq.length? `Detectei ${uniq.length} horário(s). Confira e clique para definir Início/Fim:` : "Não consegui identificar horários. Digite manualmente.";
+    res.innerHTML = uniq.map(t=>`<span class="time-chip" onclick="setTime('${t}')">${t}</span>`).join("") +
+      (text.trim()? `<div class="ocr-raw">${escapeHtml(text.trim())}</div>`:"");
+  }catch(err){
+    st.innerHTML='<span style="color:var(--red)">Falha ao ler a imagem. Digite os horários manualmente.</span>';
+  }
+}
+let _timeToggle=0;
+function setTime(t){
+  // primeiro clique define Início, segundo define Fim, alterna
+  if(_timeToggle%2===0){ document.getElementById("fStart").value=t; }
+  else { document.getElementById("fEnd").value=t; }
+  _timeToggle++;
+  recalc();
+}
+
+/* ================= Importar pontos em lote (imagem) ================= */
+let pontoRows=[]; // linhas extraídas
+function toMin(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
+function brDateToISO(d){ const p=d.split("/"); return p[2]+"-"+p[1].padStart(2,"0")+"-"+p[0].padStart(2,"0"); }
+function normTime(t){ const [h,m]=t.split(":"); return pad(+h)+":"+m; }
+let pontoFiles=[];
+function impInit(){
+  if(!pontoRows.length && !pontoFiles.length){
+    gv("impThumbs").innerHTML=""; gv("impActions").style.display="none";
+    gv("impResult").style.display="none"; gv("impStatus").textContent="";
+    gv("impRaw").style.display="none"; gv("impRaw").textContent=""; gv("impDone").style.display="none";
+  }
+}
+function impClear(){
+  pontoRows=[]; pontoFiles=[];
+  gv("impThumbs").innerHTML=""; gv("impActions").style.display="none";
+  gv("impResult").style.display="none"; gv("impStatus").textContent="";
+  gv("impRaw").textContent=""; gv("impRaw").style.display="none"; gv("impDone").style.display="none";
+  gv("impFile").value="";
+}
+function addPontoFiles(ev){
+  [...ev.target.files].forEach(f=>pontoFiles.push({file:f, name:f.name, done:false}));
+  gv("impFile").value="";
+  renderImpThumbs();
+  gv("impActions").style.display = pontoFiles.length? "flex":"none";
+  gv("impReadBtn").style.display = pontoFiles.some(f=>!f.done)? "inline-flex":"none";
+}
+function renderImpThumbs(){
+  gv("impThumbs").innerHTML = pontoFiles.map((f,i)=>`<span class="imp-thumb" title="${escapeHtml(f.name)}">${f.done?'✅':'🖼️'} foto ${i+1} <span style="cursor:pointer;color:var(--red)" onclick="removePontoFile(${i})">✕</span></span>`).join("");
+}
+function removePontoFile(i){ pontoFiles.splice(i,1); renderImpThumbs(); gv("impActions").style.display=pontoFiles.length?"flex":"none"; gv("impReadBtn").style.display=pontoFiles.some(f=>!f.done)?"inline-flex":"none"; }
+
+function validBRDate(d){ const p=d.split("/").map(Number); return p[0]>=1&&p[0]<=31&&p[1]>=1&&p[1]<=12&&p[2]>=2000; }
+function validTime(t){ const [h,m]=t.split(":").map(Number); return h>=0&&h<=23&&m>=0&&m<=59; }
+function parsePonto(text){
+  const rows=[];
+  text.split(/\r?\n/).forEach(line=>{
+    const dates=(line.match(/\d{1,2}\/\d{1,2}\/\d{4}/g)||[]).filter(validBRDate);
+    const times=(line.match(/\b\d{1,2}:\d{2}\b/g)||[]).filter(validTime);
+    if(dates.length>=2 && times.length>=2){
+      rows.push({
+        entradaDate:brDateToISO(dates[0]), entradaTime:normTime(times[0]),
+        saidaDate:brDateToISO(dates[1]), saidaTime:normTime(times[1]),
+        horas: times[2]?normTime(times[2]):""
+      });
+    }
+  });
+  return rows;
+}
+function pontoIsNoturno(r){
+  if(r.saidaDate>r.entradaDate) return true;
+  return toMin(r.saidaTime) <= toMin(r.entradaTime); // vira a madrugada
+}
+function pontoClockHours(r){
+  let m=toMin(r.saidaTime)-toMin(r.entradaTime); if(m<=0) m+=1440; return Math.round(m/60*100)/100;
+}
+function pontoSysHours(r){ return r.horas ? Math.round(toMin(r.horas)/60*100)/100 : 0; }
+function decToHM(dec){ const t=Math.round(dec*60); return pad(Math.floor(t/60))+"h"+pad(t%60); }
+function pontoRowKey(r){ return r.entradaDate+"|"+r.entradaTime+"|"+r.saidaTime; }
+async function runPontoOCR(){
+  const st=gv("impStatus");
+  const pend=pontoFiles.filter(f=>!f.done);
+  if(!pend.length){ st.textContent="Nenhuma foto nova para ler."; return; }
+  if(typeof Tesseract==="undefined"){ st.innerHTML='<span style="color:var(--amber)">Leitor de imagem não carregou (precisa de internet na 1ª vez).</span>'; return; }
+  gv("impReadBtn").style.display="none";
+  const seen=new Set(pontoRows.map(pontoRowKey));
+  let allText="";
+  for(let k=0;k<pend.length;k++){
+    const f=pend[k];
+    st.innerHTML=`<span class="spin"></span> Lendo foto ${k+1}/${pend.length}…`;
+    try{
+      const { data } = await Tesseract.recognize(f.file, "eng", {
+        logger:m=>{ if(m.status==="recognizing text") st.innerHTML=`<span class="spin"></span> Lendo foto ${k+1}/${pend.length}… ${Math.round(m.progress*100)}%`; }
+      });
+      allText += (data.text||"")+"\n";
+      parsePonto(data.text||"").forEach(r=>{ const key=pontoRowKey(r); if(!seen.has(key)){ seen.add(key); pontoRows.push(r); } });
+      f.done=true;
+    }catch(e){ /* segue para a próxima */ }
+  }
+  gv("impRaw").textContent += allText;
+  renderImpThumbs();
+  gv("impActions").style.display = pontoFiles.length?"flex":"none";
+  if(!pontoRows.length){ st.innerHTML='Não consegui identificar linhas de ponto. Confira as imagens.'; return; }
+  pontoRows.sort((a,b)=> a.entradaDate.localeCompare(b.entradaDate) || a.entradaTime.localeCompare(b.entradaTime));
+  pontoRows.forEach(r=>{ if(r.incluir===undefined) r.incluir=!pontoIsNoturno(r); });
+  st.innerHTML=`Li <b>${pontoRows.length}</b> linha(s) de ${pontoFiles.filter(f=>f.done).length} foto(s). Corrija o que precisar e lance no calendário.`;
+  gv("impResult").style.display="block";
+  gv("impDone").style.display="none";
+  renderImpTable();
+}
+function renderImpTable(){
+  const usados=new Set();
+  let nCal=0,nNovo=0,nNot=0;
+  gv("impBody").innerHTML=pontoRows.map((r,i)=>{
+    const not=pontoIsNoturno(r);
+    const h=pontoClockHours(r);
+    let match=null;
+    if(!not && r.incluir){ const c=shifts.filter(s=>s.date===r.entradaDate && (s.type==="ps_guarda"||s.type==="ps_guarda_vs") && !usados.has(s.id)); match=c[0]||null; if(match) usados.add(match.id); }
+    if(not) nNot++; else if(!r.incluir){} else if(match) nCal++; else nNovo++;
+    const cal = not ? '<span class="badge pend">noturno — ignorado</span>'
+      : (match ? `<span class="badge paid">✓ ${escapeHtml(SERVICOS[match.type]||"no calendário")}</span>` : '<span class="pp-new">✗ novo plantão</span>');
+    const warn=(!not && (h<4||h>8))?' <span class="pp-warn" title="fora da média de 6h">⚠</span>':'';
+    return `<tr${not?' class="pp-skip"':''}>
+      <td><input type="checkbox" ${r.incluir?"checked":""} onchange="impToggle(${i},this.checked)" style="width:auto"></td>
+      <td>${fmtDate(r.entradaDate)}</td>
+      <td><input type="time" value="${r.entradaTime}" onchange="impEditTime(${i},'entradaTime',this.value)"></td>
+      <td><input type="time" value="${r.saidaTime}" onchange="impEditTime(${i},'saidaTime',this.value)"></td>
+      <td><b>${decToHM(h)}</b> <span class="hint">(${h}h)</span>${warn}</td>
+      <td>${cal}</td>
+      <td><button class="btn small danger" onclick="impRemove(${i})">✕</button></td>
+    </tr>`;
+  }).join("");
+  const incl=pontoRows.filter(r=>r.incluir && !pontoIsNoturno(r));
+  const totH=incl.reduce((a,r)=>a+pontoClockHours(r),0);
+  gv("impTotalH").textContent=decToHM(totH);
+  gv("impSummary").innerHTML=`${incl.length} a lançar · <b style="color:var(--green)">${nCal}</b> já no calendário · <b style="color:var(--amber)">${nNovo}</b> novos · <b style="color:var(--muted)">${nNot}</b> noturnos ignorados`;
+}
+function impToggle(i,v){ pontoRows[i].incluir=v; renderImpTable(); }
+function impEditTime(i,field,v){ if(v){ pontoRows[i][field]=v; if(field==="entradaTime"||field==="saidaTime") pontoRows[i].saidaDate=pontoRows[i].entradaDate; } renderImpTable(); }
+function impRemove(i){ pontoRows.splice(i,1); renderImpTable(); if(!pontoRows.length){ gv("impResult").style.display="none"; } }
+function impAplicarLocal(){ toast("O local padrão será usado nos plantões novos ao lançar."); }
+function lancarPonto(){
+  const usados=new Set();
+  let atualizados=0, novos=0, rawSum=0, sysSum=0, noturnos=0;
+  const localPad=gv("impLocalPad").value.trim() || "Hospital Paulo Sacramento";
+  pontoRows.forEach(r=>{
+    if(pontoIsNoturno(r)){ noturnos++; return; }
+    if(!r.incluir) return;
+    const h=pontoClockHours(r), sysh=pontoSysHours(r);
+    rawSum+=h; sysSum+=sysh;
+    const c=shifts.filter(s=>s.date===r.entradaDate && (s.type==="ps_guarda"||s.type==="ps_guarda_vs") && !usados.has(s.id));
+    if(c.length){
+      const s=c[0]; usados.add(s.id);
+      const rate=s.type==="ps_guarda_vs"?148.00:97.20;
+      s.start=r.entradaTime; s.end=r.saidaTime; s.hours=h; s.rate=rate; s.value=round2(h*rate); s.pontoConfirmado=true; s.pontoSistemaHoras=sysh;
+      atualizados++;
+    } else {
+      const rate=97.20;
+      shifts.push({ id:uid(), type:"ps_guarda", date:r.entradaDate, local:localPad, start:r.entradaTime, end:r.saidaTime,
+        hours:h, rate:rate, value:round2(h*rate), status:"pend", payDate:"", expectedPay:expectedPayDate(r.entradaDate, localPad),
+        pontoConfirmado:true, pontoSistemaHoras:sysh, notes:"Lançado pelo ponto" });
+      novos++;
+    }
+  });
+  save(); refreshAll();
+  gv("impDone").style.display="block";
+  gv("impDone").innerHTML=`<div class="paybox" style="grid-column:auto">
+    <div style="font-weight:800;color:var(--text);margin-bottom:6px">✅ Lançado no calendário</div>
+    ${atualizados} atualizado(s), ${novos} novo(s), ${noturnos} noturno(s) ignorado(s).<br><br>
+    <b style="color:var(--accent)">Horas brutas: ${decToHM(rawSum)}</b> (${rawSum.toFixed(2)}h, tempo real entrada→saída) · <b>contagem do sistema: ${decToHM(sysSum)}</b> (${sysSum.toFixed(2)}h)</div>`;
+  toast(`${atualizados} atualizado(s), ${novos} novo(s)`);
+}
+
+function deleteShift(){
+  const id=document.getElementById("fId").value;
+  if(!id) return;
+  if(!confirm("Excluir este plantão? Esta ação não pode ser desfeita.")) return;
+  shifts=shifts.filter(x=>x.id!==id);
+  save(); closeForm(); refreshAll();
+  toast("Plantão excluído");
+}
+
+/* ================= Datalist de locais ================= */
+function locals(){ return [...new Set(shifts.map(s=>s.local).filter(Boolean))].sort(); }
+function refreshDatalist(){
+  document.getElementById("localList").innerHTML = locals().map(l=>`<option value="${escapeHtml(l)}">`).join("");
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+/* ================= Calendário ================= */
+function renderCalendar(){
+  document.getElementById("calDow").innerHTML = DOW.map(d=>`<div class="dow">${d}</div>`).join("");
+  document.getElementById("calTitle").textContent = MONTHS[calM]+" "+calY;
+  const first=new Date(calY,calM,1);
+  const startDow=first.getDay();
+  const daysInMonth=new Date(calY,calM+1,0).getDate();
+  let html="";
+  for(let i=0;i<startDow;i++) html+=`<div class="day empty"></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=calY+"-"+pad(calM+1)+"-"+pad(d);
+    const dayShifts=shifts.filter(s=>s.date===ds);
+    const isToday = ds===ymd(today);
+    let chips="";
+    dayShifts.slice(0,2).forEach(s=>{
+      chips+=`<div class="chip ${s.status}">${escapeHtml(s.local.split(" ")[0])} · ${brl(s.value)}</div>`;
+    });
+    if(dayShifts.length>2) chips+=`<div class="more">+${dayShifts.length-2} mais</div>`;
+    html+=`<div class="day ${isToday?'today':''}" onclick="dayClick('${ds}')">
+      <div class="num">${d}</div>${chips}</div>`;
+  }
+  document.getElementById("calGrid").innerHTML=html;
+  renderQuickTiles();
+}
+function dayClick(ds){
+  const dayShifts=shifts.filter(s=>s.date===ds);
+  if(dayShifts.length===1){ editShift(dayShifts[0].id); }
+  else if(dayShifts.length>1){ switchTab("list"); document.getElementById("filterMonth").value=monthKey(ds); renderList(); toast("Vários plantões neste dia — veja na aba Plantões"); }
+  else { openForm(ds); }
+}
+function calMove(dir){
+  calM+=dir;
+  if(calM<0){calM=11;calY--}
+  if(calM>11){calM=0;calY++}
+  // não deixar ir antes de jan/2026
+  if(calY<START_YEAR || (calY===START_YEAR && calM<START_MONTH)){ calY=START_YEAR; calM=START_MONTH; }
+  renderCalendar();
+}
+
+/* ================= Quick tiles (calendário) ================= */
+function renderQuickTiles(){
+  const curKey = ymd(today).slice(0,7);
+  const monthShifts = shifts.filter(s=>monthKey(s.date)===curKey);
+  const mTotal = sum(monthShifts,"value");
+  const mPend = sum(monthShifts.filter(s=>s.status==="pend"),"value");
+  const allPend = sum(shifts.filter(s=>s.status==="pend"),"value");
+  const el=document.getElementById("quickTiles");
+  el.innerHTML=`
+    <div class="tile total"><div class="lbl">Este mês (${MONTHS[today.getMonth()]})</div><div class="val">${brl(mTotal)}</div><div class="sub">${monthShifts.length} plantão(ões)</div></div>
+    <div class="tile pending"><div class="lbl">Pendente este mês</div><div class="val">${brl(mPend)}</div><div class="sub">a receber</div></div>
+    <div class="tile pending"><div class="lbl">Pendente total</div><div class="val">${brl(allPend)}</div><div class="sub">todos os meses</div></div>
+    <div class="tile received"><div class="lbl">Plantões totais</div><div class="val">${shifts.length}</div><div class="sub">desde jan/2026</div></div>`;
+}
+function sum(arr,key){ return arr.reduce((a,s)=>a+(s[key]||0),0); }
+
+/* ================= Lista ================= */
+function renderList(){
+  // filtros
+  const fs=document.getElementById("filterServico");
+  const fl=document.getElementById("filterLocal");
+  const fm=document.getElementById("filterMonth");
+  const curServico=fs.value, curLocal=fl.value, curMonth=fm.value, curStatus=document.getElementById("filterStatus").value;
+  // popular Serviço com os tipos presentes
+  const tiposPresentes=[...new Set(shifts.map(s=>s.type))].filter(t=>SERVICOS[t]);
+  const ordem=["ps_guarda","ps_guarda_vs","sobam_ps"];
+  tiposPresentes.sort((a,b)=>(ordem.indexOf(a)+100*!~ordem.indexOf(a))-(ordem.indexOf(b)+100*!~ordem.indexOf(b)));
+  fs.innerHTML='<option value="">Todos os serviços</option>'+tiposPresentes.map(t=>`<option value="${t}">${SERVICOS[t]}</option>`).join("");
+  fs.value=curServico;
+  fl.innerHTML='<option value="">Todos os locais</option>'+locals().map(l=>`<option value="${escapeHtml(l)}">${escapeHtml(l)}</option>`).join("");
+  fl.value=curLocal;
+  const monthsAvail=[...new Set(shifts.map(s=>monthKey(s.date)))].sort().reverse();
+  fm.innerHTML='<option value="">Todos os meses</option>'+monthsAvail.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join("");
+  fm.value=curMonth;
+
+  let rows=[...shifts].sort((a,b)=> b.date.localeCompare(a.date) || (a.start||"").localeCompare(b.start||""));
+  if(curServico) rows=rows.filter(s=>s.type===curServico);
+  if(curLocal) rows=rows.filter(s=>s.local===curLocal);
+  if(curMonth) rows=rows.filter(s=>monthKey(s.date)===curMonth);
+  if(curStatus==="ponto") rows=rows.filter(needsPonto);
+  else if(curStatus) rows=rows.filter(s=>s.status===curStatus);
+
+  const body=document.getElementById("shiftBody");
+  document.getElementById("listEmpty").style.display = rows.length? "none":"block";
+  document.getElementById("shiftTable").style.display = rows.length? "table":"none";
+  body.innerHTML=rows.map(s=>`
+    <tr>
+      <td>${fmtDate(s.date)}</td>
+      <td>${s.start||"—"}–${s.end||"—"} <span class="hint">(${s.hours}h)</span></td>
+      <td>${s.hours}h</td>
+      <td>${escapeHtml(servico(s))}</td>
+      <td class="val">${brl(s.value)} ${needsPonto(s)?'<span class="badge ponto" title="Valor provisório — falta confirmar pelo ponto">provisório</span>':''}</td>
+      <td>${fmtDate(s.status==="paid"? (s.payDate||s.expectedPay) : (s.expectedPay||expectedPayDate(s.date,s.local)))}</td>
+      <td><span class="badge ${s.status} clickable" title="Clique para alternar Recebido/Pendente" onclick="toggleStatus('${s.id}')">${s.status==="paid"?"Recebido":"Pendente"}</span></td>
+      <td class="row-actions">
+        ${needsPonto(s)?`<button class="btn small" title="Preencher o ponto e recalcular" onclick="editShift('${s.id}')">📷 Ponto</button>`:""}
+        <button class="btn small" title="Alternar pago/pendente" onclick="toggleStatus('${s.id}')">${s.status==="paid"?"↺ Pendente":"✓ Recebido"}</button>
+        <button class="btn small" onclick="editShift('${s.id}')">Editar</button>
+      </td>
+    </tr>`).join("");
+
+  const tot=sum(rows,"value"), pend=sum(rows.filter(s=>s.status==="pend"),"value"), recv=sum(rows.filter(s=>s.status==="paid"),"value");
+  const totHoras=sum(rows,"hours");
+  const mediaHora = totHoras>0 ? tot/totHoras : 0;
+  document.getElementById("listTotals").innerHTML = rows.length?
+    `<div class="hint">Exibindo <b>${rows.length}</b> plantão(ões) · Horas <b style="color:var(--accent)">${decToHM(totHoras)}</b> (${totHoras.toFixed(2)}h) · Total <b style="color:var(--accent)">${brl(tot)}</b> · Recebido <b style="color:var(--green)">${brl(recv)}</b> · Pendente <b style="color:var(--amber)">${brl(pend)}</b></div>`:"";
+  // Rodapé com os totais
+  const foot=document.getElementById("shiftFoot");
+  foot.innerHTML = rows.length? `<tr style="font-weight:800;border-top:2px solid var(--border)">
+      <td>Totais</td>
+      <td class="hint" style="font-weight:600">${rows.length} plantão(ões)</td>
+      <td style="color:var(--accent)">${decToHM(totHoras)}</td>
+      <td class="hint" style="font-weight:600">média ${brl(mediaHora)}/h</td>
+      <td class="val" style="color:var(--accent)">${brl(tot)}</td>
+      <td colspan="3" class="hint" style="font-weight:600">Recebido <b style="color:var(--green)">${brl(recv)}</b> · Pendente <b style="color:var(--amber)">${brl(pend)}</b></td>
+    </tr>` : "";
+}
+function markPaid(id){ toggleStatus(id, true); }
+function toggleStatus(id, forcePaid){
+  const s=shifts.find(x=>x.id===id); if(!s) return;
+  const makePaid = forcePaid===true ? true : s.status!=="paid";
+  if(makePaid){
+    s.status="paid";
+    if(!s.payDate) s.payDate=s.expectedPay||expectedPayDate(s.date,s.local)||ymd(today);
+    toast("Marcado como recebido");
+  }else{
+    s.status="pend"; s.payDate="";
+    toast("Marcado como pendente");
+  }
+  save(); refreshAll();
+}
+
+/* ================= Resumo mensal ================= */
+function renderSummary(){
+  // filtro de serviço (contagem individual por lugar)
+  const fs=document.getElementById("summaryServico");
+  const svc = fs? fs.value : "";
+  if(fs){
+    const tiposPresentes=[...new Set(shifts.map(s=>s.type))].filter(t=>SERVICOS[t]);
+    const ordem=["ps_guarda","ps_guarda_vs","sobam_ps"];
+    tiposPresentes.sort((a,b)=>(ordem.indexOf(a)+100*!~ordem.indexOf(a))-(ordem.indexOf(b)+100*!~ordem.indexOf(b)));
+    fs.innerHTML='<option value="">Todos os serviços</option>'+tiposPresentes.map(t=>`<option value="${t}">${SERVICOS[t]}</option>`).join("");
+    fs.value=svc;
+  }
+  const base = svc ? shifts.filter(s=>s.type===svc) : shifts;
+  const hint=document.getElementById("summaryServicoHint");
+  if(hint){
+    const th=sum(base,"hours"), tv=sum(base,"value");
+    hint.innerHTML = svc ? `${SERVICOS[svc]}: <b>${base.length}</b> plantões · <b style="color:var(--accent)">${decToHM(th)}</b> · <b style="color:var(--accent)">${brl(tv)}</b>` : "Selecione um serviço para ver só as horas e o valor daquele lugar.";
+  }
+
+  // Tiles: últimos 3 meses (2 anteriores + atual), por data de pagamento — recebido e pendente de cada
+  let tilesHtml="";
+  for(let off=2; off>=0; off--){
+    const d=new Date(today.getFullYear(), today.getMonth()-off, 1);
+    const mk=d.getFullYear()+"-"+pad(d.getMonth()+1);
+    const arr=base.filter(s=>payMonthKey(s)===mk);
+    const recv=sum(arr.filter(s=>s.status==="paid"),"value");
+    const pend=sum(arr.filter(s=>s.status==="pend"),"value");
+    const horas=sum(arr,"hours");
+    const cur = off===0;
+    tilesHtml+=`<div class="tile ${cur?'total':(off===1?'received':'pending')}">
+      <div class="lbl">${MONTHS[d.getMonth()]} ${d.getFullYear()}${cur?' (atual)':''}</div>
+      <div class="tile-2">
+        <div><div class="k">Recebido</div><div class="v rc">${brl(recv)}</div></div>
+        <div><div class="k">A receber</div><div class="v pd">${brl(pend)}</div></div>
+      </div>
+      <div class="sub">pela data de pagamento${svc?` · ${decToHM(horas)}`:''}</div>
+    </div>`;
+  }
+  document.getElementById("summaryTiles").innerHTML=tilesHtml;
+
+  renderByService();
+  renderReceiptsByMonth(base);
+
+  let keys=[...new Set(base.map(s=>monthKey(s.date)))].sort().reverse();
+  // filtro de período: "3" = mês atual + 2 anteriores (ex.: julho → maio); "6" = 6 meses; "all" = tudo
+  const periodo=(document.getElementById("summaryPeriod")||{}).value || "3";
+  if(periodo!=="all"){
+    const n=parseInt(periodo,10);
+    const cut=new Date(today.getFullYear(), today.getMonth()-(n-1), 1);
+    const cutKey=cut.getFullYear()+"-"+pad(cut.getMonth()+1);
+    keys=keys.filter(k=>k>=cutKey); // mostra do mês de corte para frente (inclui meses futuros já agendados)
+  }
+  document.getElementById("summaryEmpty").style.display = keys.length? "none":"block";
+  const wrap=document.getElementById("monthList");
+  wrap.innerHTML=keys.map(k=>{
+    const ms=base.filter(s=>monthKey(s.date)===k).sort((a,b)=>a.date.localeCompare(b.date)||(a.start||"").localeCompare(b.start||""));
+    const t=sum(ms,"value"), p=sum(ms.filter(s=>s.status==="pend"),"value"), r=sum(ms.filter(s=>s.status==="paid"),"value");
+    const th=sum(ms,"hours");
+    const rows=ms.map(s=>`<tr>
+        <td>${fmtDate(s.date)}</td><td>${s.start||"—"}–${s.end||"—"}</td><td>${s.hours}h</td>
+        <td>${escapeHtml(s.local||"—")}</td><td class="val">${brl(s.value)}</td>
+        <td><span class="badge ${s.status} clickable" title="Clique para alternar Recebido/Pendente" onclick="toggleStatus('${s.id}')">${s.status==="paid"?"Recebido":"Pendente"}</span></td>
+        <td>${fmtDate(s.status==="paid"? (s.payDate||s.expectedPay) : (s.expectedPay||expectedPayDate(s.date,s.local)))}</td>
+      </tr>`).join("");
+    const foot=`<tr style="font-weight:800;border-top:2px solid var(--border)">
+        <td>Total</td><td class="hint" style="font-weight:600">${ms.length} plantões</td>
+        <td style="color:var(--accent)">${decToHM(th)}</td>
+        <td></td><td class="val" style="color:var(--accent)">${brl(t)}</td><td colspan="2"></td>
+      </tr>`;
+    return `<div class="month-block">
+      <div class="month-head" onclick="toggleMonth('${k}')">
+        <h3>${monthLabel(k)} <span class="hint">(${ms.length} · ${decToHM(th)})</span></h3>
+        <div class="month-nums">
+          <span class="m-total">Total<b>${brl(t)}</b></span>
+          <span class="m-recv">Recebido<b>${brl(r)}</b></span>
+          <span class="m-pend">Pendente<b>${brl(p)}</b></span>
+        </div>
+      </div>
+      <div class="month-body" id="mb-${k}">
+        <div class="table-wrap"><table style="min-width:640px">
+          <thead><tr><th>Data</th><th>Horário</th><th>Horas</th><th>Local</th><th>Valor</th><th>Situação</th><th>Pagamento</th></tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot>${foot}</tfoot>
+        </table></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+function toggleMonth(k){ document.getElementById("mb-"+k).classList.toggle("open"); }
+
+/* Pendente a receber por serviço */
+function renderByService(){
+  const order=["ps_guarda","ps_guarda_vs","sobam_ps"];
+  const seen=[...new Set(shifts.map(s=>s.type))];
+  const keys=[...order.filter(k=>seen.includes(k)), ...seen.filter(k=>!order.includes(k))];
+  let html=`<div class="svc-grid">
+    <div class="h">Serviço</div><div class="h" style="text-align:right">Plantões</div><div class="h" style="text-align:right">Recebido</div><div class="h" style="text-align:right">Pendente</div>
+    <div class="rowline"></div>`;
+  keys.forEach(k=>{
+    const arr=shifts.filter(s=>s.type===k); if(!arr.length) return;
+    const lab=SERVICOS[k]||arr[0].local||"Outro";
+    const pend=sum(arr.filter(s=>s.status==="pend"),"value");
+    const recv=sum(arr.filter(s=>s.status==="paid"),"value");
+    const prov=arr.filter(needsPonto).length;
+    html+=`<div class="nm">${escapeHtml(lab)} ${prov?`<span class="badge ponto">${prov} p/ ponto</span>`:''}</div>
+      <div style="text-align:right">${arr.length}</div>
+      <div class="rc">${brl(recv)}</div>
+      <div class="pd">${brl(pend)}</div>`;
+  });
+  const tp=sum(shifts.filter(s=>s.status==="pend"),"value");
+  const tr=sum(shifts.filter(s=>s.status==="paid"),"value");
+  html+=`<div class="rowline"></div>
+    <div class="nm">Total</div><div style="text-align:right">${shifts.length}</div>
+    <div class="rc">${brl(tr)}</div><div class="pd">${brl(tp)}</div></div>`;
+  // Horas do ponto (confirmadas): brutas x contagem do sistema
+  const conf=shifts.filter(s=>s.pontoSistemaHoras!=null);
+  if(conf.length){
+    const raw=sum(conf,"hours"), sysh=conf.reduce((a,s)=>a+(s.pontoSistemaHoras||0),0);
+    html+=`<div class="hint" style="margin-top:12px">⏱️ Horas confirmadas pelo ponto (${conf.length} plantões): <b style="color:var(--accent)">brutas ${decToHM(raw)}</b> (${raw.toFixed(2)}h, tempo real entrada→saída) · <b>contagem do sistema ${decToHM(sysh)}</b> (${sysh.toFixed(2)}h)</div>`;
+  }
+  document.getElementById("byService").innerHTML=html;
+}
+
+/* Recebimentos por mês: agrupa TODOS os plantões pela data de pagamento (recebido + a receber).
+   Um mês de pagamento pode conter plantões realizados até ~2 meses antes. */
+function payMonthKey(s){ return monthKey(s.payDate||s.expectedPay||expectedPayDate(s.date,s.local)); }
+function renderReceiptsByMonth(base){
+  base = base || shifts;
+  const box=document.getElementById("payForecast");
+  if(!base.length){ box.innerHTML='<div class="hint">Sem plantões para este serviço.</div>'; return; }
+  const groups={};
+  base.forEach(s=>{ const k=payMonthKey(s); (groups[k]=groups[k]||[]).push(s); });
+  const keys=Object.keys(groups).sort();
+  const curKey=ymd(today).slice(0,7);
+  box.innerHTML=keys.map(k=>{
+    const arr=groups[k].sort((a,b)=>a.date.localeCompare(b.date));
+    const recv=sum(arr.filter(s=>s.status==="paid"),"value");
+    const pend=sum(arr.filter(s=>s.status==="pend"),"value");
+    const tot=recv+pend;
+    const latePend = k<curKey && pend>0;
+    // faixa de datas de realização que compõem este mês de pagamento
+    const ds=arr.map(s=>s.date).sort();
+    const faixa = ds.length? `${fmtDate(ds[0])} a ${fmtDate(ds[ds.length-1])}` : "";
+    const th=sum(arr,"hours");
+    const rows=arr.map(s=>`<tr>
+        <td>${fmtDate(s.date)}</td><td>${escapeHtml(servico(s))}</td>
+        <td>${s.start||"—"}–${s.end||"—"} <span class="hint">(${s.hours}h)</span></td><td class="val">${brl(s.value)}</td>
+        <td><span class="badge ${s.status} clickable" title="Clique para alternar Recebido/Pendente" onclick="toggleStatus('${s.id}')">${s.status==="paid"?"Recebido":"Pendente"}</span></td>
+      </tr>`).join("");
+    const foot=`<tr style="font-weight:800;border-top:2px solid var(--border)">
+        <td>Total</td><td class="hint" style="font-weight:600">${arr.length} plantões</td>
+        <td style="color:var(--accent)">${decToHM(th)}</td>
+        <td class="val" style="color:var(--accent)">${brl(tot)}</td><td></td>
+      </tr>`;
+    return `<div class="month-block">
+      <div class="month-head" onclick="toggleMonth('rc-${k}')">
+        <h3>${monthLabel(k)} ${latePend?'<span class="badge pend">falta receber</span>':''} <span class="hint">(${arr.length} plantões · ${decToHM(th)} · ${faixa})</span></h3>
+        <div class="month-nums">
+          <span class="m-recv">Recebido<b>${brl(recv)}</b></span>
+          <span class="m-pend">A receber<b>${brl(pend)}</b></span>
+          <span class="m-total">Total do mês<b>${brl(tot)}</b></span>
+        </div>
+      </div>
+      <div class="month-body" id="mb-rc-${k}">
+        <div class="table-wrap"><table style="min-width:560px">
+          <thead><tr><th>Plantão (realização)</th><th>Serviço</th><th>Horário</th><th>Valor</th><th>Situação</th></tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot>${foot}</tfoot>
+        </table></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ================= Export / Import ================= */
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(shifts,null,2)],{type:"application/json"});
+  downloadBlob(blob,"plantoes-backup.json");
+  toast("Backup exportado");
+}
+function exportCSV(){
+  const head=["Data","Inicio","Fim","Horas","ValorHora","Local","ValorTotal","Situacao","DataPagamento","Observacoes"];
+  const lines=[head.join(";")];
+  [...shifts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{
+    lines.push([s.date,s.start,s.end,s.hours,s.rate,`"${(s.local||"").replace(/"/g,'""')}"`,
+      s.value, s.status==="paid"?"Recebido":"Pendente", s.payDate||"", `"${(s.notes||"").replace(/"/g,'""')}"`].join(";"));
+  });
+  const blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  downloadBlob(blob,"plantoes.csv");
+  toast("CSV exportado");
+}
+function downloadBlob(blob,name){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function importJSON(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!Array.isArray(data)) throw new Error("formato");
+      const mode = shifts.length ? (confirm("Substituir os plantões atuais? \n\nOK = substituir tudo\nCancelar = juntar (mesclar) com os existentes") ? "replace":"merge") : "replace";
+      if(mode==="replace"){ shifts=data; }
+      else{
+        const ids=new Set(shifts.map(s=>s.id));
+        data.forEach(d=>{ if(!d.id||ids.has(d.id)) d.id=uid(); shifts.push(d); });
+      }
+      // sanitiza
+      shifts=shifts.map(s=>({
+        id:s.id||uid(), type:s.type||"", date:s.date, local:s.local||"", start:s.start||"", end:s.end||"",
+        hours:Number(s.hours)||0, rate:Number(s.rate)||0,
+        value: s.value!=null? Number(s.value): (Number(s.hours)||0)*(Number(s.rate)||0),
+        status: s.status==="paid"?"paid":"pend", payDate:s.payDate||"",
+        expectedPay: s.expectedPay||"", pontoConfirmado: s.pontoConfirmado, pontoSistemaHoras: s.pontoSistemaHoras, notes:s.notes||""
+      })).filter(s=>s.date);
+      migrate();
+      save(); refreshAll(); toast("Importado com sucesso");
+    }catch(e){ alert("Arquivo inválido. Use um backup JSON exportado por esta plataforma."); }
+    ev.target.value="";
+  };
+  reader.readAsText(file);
+}
+
+/* ================= Tema (claro/escuro) ================= */
+const THEME_KEY="plantao_theme";
+function applyTheme(t){
+  document.body.classList.toggle("light", t==="light");
+  const btn=document.getElementById("themeBtn");
+  if(btn) btn.textContent = t==="light" ? "🌙 Escuro" : "☀️ Claro";
+}
+function toggleTheme(){
+  const next = document.body.classList.contains("light") ? "dark" : "light";
+  store.set(THEME_KEY, next);
+  applyTheme(next);
+}
+
+/* ================= Init ================= */
+function refreshAll(){
+  refreshDatalist();
+  renderCalendar();
+  renderList();
+  renderSummary();
+}
+function init(){
+  applyTheme(store.get(THEME_KEY)||"dark");
+  // fechar modal (form) ao clicar fora
+  document.getElementById("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") closeForm(); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeForm(); } });
+  // exige login (sessão restaurada se existir)
+  var sess=store.get('pl_session');
+  if(sess && userByLogin(sess)){ completeLogin(sess); }
+  else { showLogin(); }
+}
+init();
+</script>
+</body>
+</html>
