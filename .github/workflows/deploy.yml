@@ -32,3 +32,5 @@ jobs:
       - name: Publicar no GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          timeout: 1200000   # 20 min (padrão é 600000 = 10 min)
