@@ -2143,8 +2143,9 @@ function drawEscEnf(){
     var obsCls=wknd?'esc-obs-wknd':'';
     // Plantão de 12h: funde a célula da manhã sobre a tarde (rowspan=2), sem duplicar o nome.
     // Só na VISUALIZAÇÃO (fora do modo edição), para o escalista ainda editar cada turno separadamente.
-    var merge1=(!admin) && escEnf12hMerge(rec,1);
-    var merge2=(!admin) && escEnf12hMerge(rec,2);
+    // No modo edição a fusão só vale para a carga 12h marcada pelo escalista (a caixa da tarde some; voltar a carga para 6h a reexibe).
+    var merge1=escEnf12hMerge(rec,1) && (!admin || String(rec.manhaM1Carga)==='12');
+    var merge2=escEnf12hMerge(rec,2) && (!admin || String(rec.manhaM2Carga)==='12');
     var tag12='<div class="esc-12h-tag">☀️🌇 12h · manhã + tarde</div>';
     h+='<tr class="'+rowCls+'">';
     h+='<td class="c-data" rowspan="2">'+dstr+'</td>';
