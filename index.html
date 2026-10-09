@@ -2073,7 +2073,8 @@ function escEnfNomeBase(s){ return String(s||'').split('(')[0].trim().toLowerCas
 function escEnfNomeEq(a,b){ var x=escEnfNomeBase(a); return !!x && x===escEnfNomeBase(b); }
 function escEnf12hMerge(rec, n){
   var m='manhaM'+n, t='tardeM'+n, mn=rec[m]||'', tn=rec[t]||'';
-  if(escEnfIsNA(mn) || escEnfIsNA(tn)) return false;
+  if(escEnfIsNA(mn)) return false;
+  if(escEnfIsNA(tn)) return String(rec[m+'Carga'])==='12';   // 12h marcada na manhã + tarde vazia: a manhã já cobre a tarde
   if(!escEnfNomeEq(mn, tn)) return false;                    // precisa ser o MESMO plantonista nos dois turnos
   if(String(rec[m+'Carga'])==='12') return true;             // escalista marcou carga 12h
   if(rec[m+'PtRealEnt']) return true;                        // extrator marcou ponto real contínuo
@@ -2081,6 +2082,31 @@ function escEnf12hMerge(rec, n){
   var e=escHMtoMin(rec[m+'Ent']), s=escHMtoMin(rec[m+'Sai']);// ou o ponto da manhã já cobre manhã→tarde (>9h, cruza 13h)
   if(e!=null && s!=null && e<13*60 && s>13*60 && (s-e)>9*60) return true;
   return false;
+}
+/* Tarde "absorvida": a manhã da mesma coluna está marcada com carga 12h e a tarde repete o MESMO plantonista.
+   As 6h da tarde já estão dentro das 12h da manhã — a tarde não vira linha nem soma carga. */
+function escEnfTardeAbsorvida(rec, k){
+  if(String(k).indexOf('tarde')!==0) return false;
+  var n=String(k).slice(-1), m='manhaM'+n;
+  return String(rec[m+'Carga'])==='12' && !escEnfIsNA(rec[k]||'') && escEnfNomeEq(rec[m]||'', rec[k]||'');
+}
+/* Ponto do plantão de 12h quando a tarde absorvida tem batida própria: entrada da manhã → saída da tarde. */
+function escEnf12hPonto(rec, mk){
+  var ent=rec[mk+'Ent']||'', sai=rec[mk+'Sai']||'';
+  if(String(mk).indexOf('manha')!==0) return {ent:ent, sai:sai};
+  var tk='tardeM'+String(mk).slice(-1);
+  if(!escEnfTardeAbsorvida(rec, tk)) return {ent:ent, sai:sai};
+  var te=rec[tk+'Ent']||'', ts=rec[tk+'Sai']||'';
+  if(!ent && te) ent=te;
+  var sm=escHMtoMin(sai), tm=escHMtoMin(ts);
+  if(tm!=null && (sm==null || tm>sm)) sai=ts;
+  return {ent:ent, sai:sai};
+}
+/* Texto da célula da tarde nas exportações da grade: plantão de 12h com a tarde vazia mostra quem cobre. */
+function escCellTextTarde(rec, k, pontos){
+  var n=String(k).slice(-1);
+  if(escEnfIsNA(rec[k]||'') && escEnf12hMerge(rec, n)) return String(rec['manhaM'+n]||'').trim()+' · 12h (07h–19h)';
+  return escCellText(rec, k, pontos);
 }
 function drawEscEnf(){
   escEnfMaybeSnap(); // captura/atualiza o snapshot do mês em edição (para "Cancelar")
@@ -2197,10 +2223,12 @@ function escEnfResumoMeu(){
       if(!escPtNameMatch(rec[sl.k]||'', who)) return;
       var isCont=(rec[sl.k+'PtCont']===true || rec[sl.k+'PtCont']==='true');
       if(isCont && contManha) return;   // continuação da tarde já representada pela linha da manhã (ponto real)
+      if(escEnfTardeAbsorvida(rec, sl.k)) return;   // tarde já contida nas 12h marcadas na manhã (não duplica a carga)
       if(ocultas[escResumoRowKey(escEnfKey(), who, d, sl.k)]){ nOcultas++; return; }   // linha suprimida pelo médico
       var tipo=escTipoFromName(rec[sl.k])||'(sem tipo)';
       var realE=rec[sl.k+'PtRealEnt']||'', realS=rec[sl.k+'PtRealSai']||'';
-      var ent=realE||(rec[sl.k+'Ent']||''), sai=realS||(rec[sl.k+'Sai']||''), hpReal=escHorasPonto(ent,sai);
+      var pt12=escEnf12hPonto(rec, sl.k);
+      var ent=realE||pt12.ent, sai=realS||pt12.sai, hpReal=escHorasPonto(ent,sai);
       // Carga: seleção manual do escalista (6h/12h) tem prioridade; senão 12h p/ plantão contínuo, 6h padrão.
       var cargaExpl=parseInt(rec[sl.k+'Carga'],10);
       var cargaRow = (cargaExpl===6||cargaExpl===12) ? cargaExpl : ((realE && tardeCont) ? (2*ESC_TURNO_H) : ESC_TURNO_H);
@@ -2465,18 +2493,21 @@ function escEnfTotaisCompute(){
     var rec=escEnfData[String(d)]||{};
     slots.forEach(function(s){
       var name=rec[s]||''; if(escEnfIsNA(name)) return;
+      if(escEnfTardeAbsorvida(rec, s)) return;   // tarde contida nas 12h da manhã
       var fn=String(name).split('(')[0].trim(); if(!fn) return;
       var tipo=escTipoFromName(name)||'(sem tipo)';
-      var hp=escHorasPonto(rec[s+'Ent'], rec[s+'Sai']);
+      var pt12=escEnf12hPonto(rec, s);
+      var hp=escHorasPonto(pt12.ent, pt12.sai);
+      var cg=(String(rec[s+'Carga'])==='12') ? 12 : ESC_TURNO_H;   // carga marcada pelo escalista
       if(!porMedico[fn]) porMedico[fn]={n:0,carga:0,ponto:0,comPonto:0,tipos:{}};
       var pm=porMedico[fn];
-      pm.n++; pm.carga+=ESC_TURNO_H;
+      pm.n++; pm.carga+=cg;
       if(!pm.tipos[tipo]) pm.tipos[tipo]={n:0,carga:0,ponto:0};
-      pm.tipos[tipo].n++; pm.tipos[tipo].carga+=ESC_TURNO_H;
+      pm.tipos[tipo].n++; pm.tipos[tipo].carga+=cg;
       if(hp>0){ pm.ponto+=hp; pm.comPonto++; pm.tipos[tipo].ponto+=hp; }
       if(!totalTipos[tipo]) totalTipos[tipo]={n:0,carga:0,ponto:0};
-      totalTipos[tipo].n++; totalTipos[tipo].carga+=ESC_TURNO_H; if(hp>0) totalTipos[tipo].ponto+=hp;
-      totN++; totCarga+=ESC_TURNO_H; if(hp>0){ totPonto+=hp; totComPonto++; }
+      totalTipos[tipo].n++; totalTipos[tipo].carga+=cg; if(hp>0) totalTipos[tipo].ponto+=hp;
+      totN++; totCarga+=cg; if(hp>0){ totPonto+=hp; totComPonto++; }
     });
   }
   return { porMedico:porMedico, totalTipos:totalTipos, totN:totN, totCarga:totCarga, totPonto:totPonto, totComPonto:totComPonto };
@@ -3585,7 +3616,7 @@ function escExportCSV(opts){
       var rec=data[String(d)]||{}, wd=new Date(y,m,d).getDay();
       var dstr=pad(d)+'/'+pad(m+1)+'/'+String(y).slice(2);
       rows.push([dstr, String(d), DOW_FULL[wd], 'Manhã (07h–13h)', escCellText(rec,'manhaM1',pontos), escCellText(rec,'manhaM2',pontos), rec.obs||'']);
-      rows.push(['','','','Tarde (13h–19h)', escCellText(rec,'tardeM1',pontos), escCellText(rec,'tardeM2',pontos)||'—', '']);
+      rows.push(['','','','Tarde (13h–19h)', escCellTextTarde(rec,'tardeM1',pontos), escCellTextTarde(rec,'tardeM2',pontos)||'—', '']);
     }
     var csv=rows.map(function(r){ return r.map(csvCell).join(','); }).join('\r\n');
     downloadFile('Escala_Enfermaria_'+key+(pontos?'_com_pontos':'')+'.csv', '﻿'+csv, 'text/csv;charset=utf-8');
@@ -3620,8 +3651,8 @@ function escExportPDF(opts){
       ]);
       body.push([
         {content:'Tarde (13h-19h)', styles:{fontStyle:'italic', fillColor:[234,245,236], textColor:[74,122,82]}},
-        {content:escCellText(rec,'tardeM1',pontos), styles:{fillColor:[234,245,236]}},
-        {content:escCellText(rec,'tardeM2',pontos)||'—', styles:{fillColor:[234,245,236]}}
+        {content:escCellTextTarde(rec,'tardeM1',pontos), styles:{fillColor:[234,245,236]}},
+        {content:escCellTextTarde(rec,'tardeM2',pontos)||'—', styles:{fillColor:[234,245,236]}}
       ]);
     }
     doc.setFontSize(10); doc.text('Escala Enfermaria de Pediatria — HPS'+(pontos?'  (com pontos de entrada/saída)':''), 40, 34);
@@ -3663,7 +3694,13 @@ function renderPerfil(){
 /* ---- Aviso no topo do Meu Perfil: escala da semana + próximo plantão do médico logado ---- */
 var PERFIL_SLOTS=[{k:'manhaM1',t:'Manhã',faixa:'07h–13h'},{k:'manhaM2',t:'Manhã',faixa:'07h–13h'},{k:'tardeM1',t:'Tarde',faixa:'13h–19h'},{k:'tardeM2',t:'Tarde',faixa:'13h–19h'}];
 function perfilMesKey(y,m){ return y+'-'+pad(m+1); }
-function perfilEscRec(escByKey, dt){ var k=perfilMesKey(dt.getFullYear(),dt.getMonth()); var data=escByKey[k]||{}; return data[String(dt.getDate())]||{}; }
+function perfilEscRec(escByKey, dt){
+  var k=perfilMesKey(dt.getFullYear(),dt.getMonth()); var data=escByKey[k]||{}; var rec=data[String(dt.getDate())]||{};
+  // Plantão de 12h marcado na manhã com a tarde vazia: quem cobre a tarde é o mesmo plantonista (só para exibição).
+  var out=null;
+  [1,2].forEach(function(n){ if(escEnfIsNA(rec['tardeM'+n]||'') && escEnf12hMerge(rec,n)){ if(!out){ out={}; Object.keys(rec).forEach(function(x){ out[x]=rec[x]; }); } out['tardeM'+n]=rec['manhaM'+n]; } });
+  return out||rec;
+}
 function perfilProxPlantao(escByKey, who){
   if(!who) return null;
   var base=new Date(today.getFullYear(),today.getMonth(),today.getDate());
