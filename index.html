@@ -1952,6 +1952,7 @@ function escResumoOcultasGet(){ try{ return JSON.parse(store.get('pl_escResumoOc
 function escResumoOcultasSave(o){ try{ store.set('pl_escResumoOcultas::'+currentUser, JSON.stringify(o||{})); }catch(e){} }
 function escResumoRowKey(mk, who, d, field){ return mk+'|'+String(who||'').toLowerCase()+'|'+d+'|'+field; }
 function escResumoOcultar(d, field){
+  if(!escEnfCanEdit()) return;   // só no modo edição (botão "✏️ Editar")
   var ctx=escResumoLast; if(!ctx) return;
   var o=escResumoOcultasGet(); o[escResumoRowKey(ctx.monthKey, ctx.who, d, field)]=1;
   escResumoOcultasSave(o); drawEscEnf();
@@ -2325,8 +2326,8 @@ function escEnfResumoMeu(){
       horas=(it.hp>0?escFmtH(it.hp):'<b>0h</b>')+'<div class="esc-jan-cut" title="Horas reais do ponto (antes do recorte)">real '+escFmtH(it.hpReal)+'</div>';
     }
     var foto=it.img?('<button type="button" class="esc-pt-proof" title="Ver a foto do ponto (prova)" onclick="escPtVerImg('+it.d+",'"+it.field+"')\">📷</button>"):'<span class="esc-dim">—</span>';
-    var acao='<button type="button" class="esc-resumo-x" title="Ocultar esta linha da planilha emitida" onclick="escResumoOcultar('+it.d+",'"+it.field+"')\">✕</button>";
-    return '<tr><td>'+it.dstr+'</td><td>'+DOW_FULL[it.wd]+'</td><td>'+it.turno+'</td><td>'+escapeHtml(it.tipo)+'</td><td style="text-align:center">'+(it.carga||ESC_TURNO_H)+'h</td><td style="text-align:center">'+horario+'</td><td style="text-align:right;font-family:\'DM Mono\',ui-monospace,monospace">'+horas+'</td><td style="text-align:center">'+foto+'</td><td style="text-align:center">'+acao+'</td></tr>';
+    var acao=escEnfCanEdit() ? ('<button type="button" class="esc-resumo-x" title="Ocultar esta linha da planilha emitida" onclick="escResumoOcultar('+it.d+",'"+it.field+"')\">✕</button>") : '';   // ✕ só aparece no modo edição
+    return '<tr><td>'+it.dstr+'</td><td>'+DOW_FULL[it.wd]+'</td><td>'+it.turno+'</td><td>'+escapeHtml(it.tipo)+'</td><td style="text-align:center">'+(it.carga||ESC_TURNO_H)+'h</td><td style="text-align:center">'+horario+'</td><td style="text-align:right;font-family:\'DM Mono\',ui-monospace,monospace">'+horas+'</td><td style="text-align:center">'+foto+'</td>'+(acao?('<td style="text-align:center">'+acao+'</td>'):'')+'</tr>';
   }).join('');
   var tiposHtml=Object.keys(porTipo).map(function(t){
     var v=porTipo[t];
@@ -2334,14 +2335,14 @@ function escEnfResumoMeu(){
     return '<span class="esc-chip-tipo">'+escapeHtml(t)+': <b>'+v.n+'</b> plantão(ões) · '+escFmtH(v.carga)+(v.ponto>0||pReal?(' <span style="color:var(--muted)">(ponto '+escFmtH(v.ponto)+pReal+')</span>'):'')+'</span>';
   }).join('');
   html+='<div style="overflow-x:auto"><table class="esc-tbl esc-resumo-tbl">'+
-        '<thead><tr><th>Data</th><th>Dia da Semana</th><th>Turno</th><th>Tipo</th><th style="text-align:center">Carga</th><th style="text-align:center">Entrada / Saída</th><th style="text-align:right">Horas (ponto)</th><th style="text-align:center">Foto</th><th></th></tr></thead>'+
+        '<thead><tr><th>Data</th><th>Dia da Semana</th><th>Turno</th><th>Tipo</th><th style="text-align:center">Carga</th><th style="text-align:center">Entrada / Saída</th><th style="text-align:right">Horas (ponto)</th><th style="text-align:center">Foto</th>'+(escEnfCanEdit()?'<th></th>':'')+'</tr></thead>'+
         '<tbody>'+linhas+'</tbody>'+
         '<tfoot><tr class="esc-resumo-tot">'+
           '<td colspan="4">TOTAL — '+itens.length+' plantão(ões)</td>'+
           '<td style="text-align:center">'+escFmtH(totCarga)+'</td>'+
           '<td style="text-align:center">'+comPonto+' c/ ponto</td>'+
           '<td style="text-align:right;font-family:\'DM Mono\',ui-monospace,monospace">'+escFmtH(totPonto)+(jan.ativa&&Math.abs(totPontoReal-totPonto)>1e-9?'<div class="esc-jan-cut">real '+escFmtH(totPontoReal)+'</div>':'')+'</td>'+
-          '<td></td><td></td>'+
+          '<td></td>'+(escEnfCanEdit()?'<td></td>':'')+
         '</tr></tfoot>'+
         '</table></div>';
   if(nOcultas){
