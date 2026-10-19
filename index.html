@@ -571,6 +571,42 @@
         <button class="btn" id="escEnfCancelBtn" onclick="escEnfCancelar()" style="display:none;color:var(--red)">✕ Cancelar edição</button>
         <button class="btn primary" id="escEnfSaveBtn" onclick="escEnfSalvar()" style="display:none">✓ Salvar</button>
       </div>
+      <!-- Plantões FIXOS + preenchimento automático do mês (só o escalista) -->
+      <div id="escFixCard" style="display:none;margin:0 0 14px;padding:14px;border:1px solid var(--accent);border-radius:12px;background:var(--panel-2)">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;justify-content:space-between">
+          <p class="sec-title" style="margin:0">📌 Plantões fixos</p>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer" title="Dias com a palavra feriado na observação não recebem plantão fixo"><input type="checkbox" id="escFixPularFer" checked style="width:auto;margin:0"> pular feriados</label>
+            <button class="btn primary" id="escFixFillBtn" onclick="escFixPrevia()">⚡ Preencher a escala com os fixos</button>
+          </div>
+        </div>
+        <p class="sec-sub" style="margin:6px 0 10px">Cadastre quem tem plantão fixo (dias da semana + turno). O botão ⚡ lança esses plantões no <b>mês exibido na grade</b> (<b id="escFixMesLbl"></b>), <b>só nas células vazias</b>: nada que já esteja na escala é sobrescrito. Antes de aplicar aparece uma prévia com os conflitos; depois de aplicar, <b>✕ Cancelar edição</b> desfaz o preenchimento.</p>
+        <div id="escFixPrev"></div>
+        <div id="escFixLista"></div>
+        <details id="escFixFormBox" style="margin-top:10px">
+          <summary id="escFixFormTitle" style="cursor:pointer;font-weight:700;font-size:13px">＋ Cadastrar plantão fixo</summary>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px">
+            <label class="f" style="margin:0">Plantonista (nome + tipo)<input id="escFixNome" list="escFixNomes" maxlength="79" placeholder="Ex.: Gabriel (guarda VS)"></label>
+            <label class="f" style="margin:0">Turno<select id="escFixTurno"><option value="manha">Manhã (07h–13h)</option><option value="tarde">Tarde (13h–19h)</option><option value="12h">12h (07h–19h) — manhã + tarde</option></select></label>
+            <label class="f" style="margin:0">Coluna na grade<select id="escFixColuna"><option value="auto">Automática (Médico 1; se ocupado, Médico 2)</option><option value="1">Sempre Médico 1</option><option value="2">Sempre Médico 2</option></select></label>
+            <label class="f" style="margin:0">Vigência: a partir de (opcional)<input type="date" id="escFixIni"></label>
+            <label class="f" style="margin:0">até (opcional)<input type="date" id="escFixFim"></label>
+          </div>
+          <div style="margin-top:12px;font-size:13px">
+            <div style="font-weight:700;color:var(--muted);margin-bottom:6px">Dias da semana</div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px"><span id="escFixDias" style="display:inline-flex;flex-wrap:wrap;gap:6px 14px"><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="1" style="width:auto;margin:0"> Seg</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="2" style="width:auto;margin:0"> Ter</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="3" style="width:auto;margin:0"> Qua</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="4" style="width:auto;margin:0"> Qui</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="5" style="width:auto;margin:0"> Sex</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="6" style="width:auto;margin:0"> Sáb</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="0" style="width:auto;margin:0"> Dom</label></span>
+              <span style="display:inline-flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn small ghost" onclick="escFixDiasAtalho('uteis')">Seg–Sex</button><button type="button" class="btn small ghost" onclick="escFixDiasAtalho('fds')">Sáb + Dom</button><button type="button" class="btn small ghost" onclick="escFixDiasAtalho('todos')">Todos</button><button type="button" class="btn small ghost" onclick="escFixDiasAtalho('nenhum')">Limpar</button></span></div>
+          </div>
+          <div style="margin-top:12px;font-size:13px">
+            <div style="font-weight:700;color:var(--muted);margin-bottom:6px">Só em algumas semanas do mês? <span style="font-weight:400">(nenhuma marcada = toda semana; ex.: 1ª e 3ª = só na 1ª e na 3ª ocorrência daquele dia no mês)</span></div>
+            <div id="escFixSemanas" style="display:flex;flex-wrap:wrap;gap:6px 14px"><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="1" style="width:auto;margin:0"> 1ª</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="2" style="width:auto;margin:0"> 2ª</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="3" style="width:auto;margin:0"> 3ª</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="4" style="width:auto;margin:0"> 4ª</label><label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" value="5" style="width:auto;margin:0"> 5ª</label></div>
+          </div>
+          <label style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;font-size:13px;cursor:pointer"><input type="checkbox" id="escFixPonto" style="width:auto;margin:0"> ligar o <b>ponto</b> (entrada/saída) nesses plantões</label>
+          <div class="form-foot" style="margin-top:12px"><button type="button" class="btn primary" id="escFixSaveBtn" onclick="escFixSalvar()">＋ Adicionar plantão fixo</button><button type="button" class="btn ghost" id="escFixCancelBtn" style="display:none" onclick="escFixLimparForm()">Cancelar alteração</button></div>
+        </details>
+        <div id="escFixMsg" style="font-size:13px;margin-top:8px"></div>
+        <datalist id="escFixNomes"></datalist>
+      </div>
       <!-- Importar escala pronta — sempre visível para o gerente; enviar arquivo já ativa a edição -->
       <div id="escgImpCard" style="display:none;margin:0 0 14px;padding:14px;border:1px dashed var(--accent);border-radius:12px;background:var(--panel-2)">
         <p class="sec-title" style="margin-top:0">📥 Importar escala pronta</p>
@@ -1804,6 +1840,8 @@ function escEnfSyncBars(){
   if(ss) ss.classList.toggle('primary', escEnfScope==='semana');
   if(sm) sm.classList.toggle('primary', escEnfScope==='mes');
   var gimp=gv('escgImpCard'); if(gimp) gimp.style.display=escEnfIsGerente()?'block':'none'; // importação sempre disponível ao gerente (não exige "Editar")
+  var gfix=gv('escFixCard'); if(gfix) gfix.style.display=escEnfIsGerente()?'block':'none'; // plantões fixos: só o escalista
+  try{ escFixBoot(); }catch(e){ console.warn('escFixBoot:', e && e.message); }
 }
 /* Ativa o modo edição sem redesenhar (usado pela importação: enviar arquivo já entra em edição).
    Captura o snapshot ANTES de aplicar a importação, para o "Cancelar" reverter inclusive o upload. */
@@ -2109,9 +2147,230 @@ function escCellTextTarde(rec, k, pontos){
   if(escEnfIsNA(rec[k]||'') && escEnf12hMerge(rec, n)) return String(rec['manhaM'+n]||'').trim()+' · 12h (07h–19h)';
   return escCellText(rec, k, pontos);
 }
+/* ===== Plantões FIXOS e preenchimento automático do mês (só o escalista) =====
+   Cadastro em escalaEnf/_config/fixos/<id> — mesma regra do nó escalaEnf (logados leem; só gabrielcm grava),
+   então NÃO exige mudar as regras do Firebase. Cópia local em pl_escFixos (fallback offline).
+   "⚡ Preencher": lança os fixos no mês EXIBIDO na grade, SÓ em células vazias (nunca sobrescreve), mostra prévia +
+   conflitos antes, entra em modo edição ao aplicar (o "✕ Cancelar edição" desfaz) e grava tudo num único update. */
+var ESC_FIX_PATH='escalaEnf/_config/fixos';
+var ESC_FIX_TURNOS={manha:'Manhã (07h–13h)', tarde:'Tarde (13h–19h)', '12h':'12h (07h–19h)'};
+var ESC_DOW_CURTO=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+var escFixList=[], escFixRef=null, escFixEditId=null, escFixPrevKey=null;
+function escFixArr(v){ return Array.isArray(v) ? v : (v && typeof v==='object' ? Object.keys(v).map(function(k){ return v[k]; }) : []); }
+function escFixUniq(a){ var seen={}; return a.filter(function(x){ if(seen[x]) return false; seen[x]=1; return true; }).sort(function(x,y){ return x-y; }); }
+function escFixNorm(o, id){
+  o=o||{};
+  var dt=function(v){ return /^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?String(v):''; };
+  var col=String(o.coluna); col=(col==='1')?1:((col==='2')?2:'auto');
+  return {
+    id:String(id||o.id||''),
+    nome:String(o.nome||'').trim().slice(0,79),
+    turno:(o.turno==='tarde'||o.turno==='12h')?o.turno:'manha',
+    dias:escFixUniq(escFixArr(o.dias).map(Number).filter(function(x){ return x>=0 && x<=6; })),
+    semanas:escFixUniq(escFixArr(o.semanas).map(Number).filter(function(x){ return x>=1 && x<=5; })),
+    coluna:col, ponto:!!o.ponto, ini:dt(o.ini), fim:dt(o.fim), ativo:o.ativo!==false
+  };
+}
+function escFixLoadLocal(){ try{ var a=JSON.parse(store.get('pl_escFixos')||'[]'); return Array.isArray(a)?a.map(function(x){ return escFixNorm(x, x&&x.id); }).filter(function(f){ return f.id && f.nome; }):[]; }catch(e){ return []; } }
+function escFixSaveLocal(){ try{ store.set('pl_escFixos', JSON.stringify(escFixList)); }catch(e){} }
+function escFixMsg(t, cor){ var m=gv('escFixMsg'); if(!m) return; m.style.color=cor==='green'?'var(--green)':(cor==='amber'?'var(--amber)':'var(--muted)'); m.innerHTML=t||''; }
+function escFixBoot(){
+  if(!escEnfIsGerente()){ if(escFixRef){ try{ escFixRef.off(); }catch(e){} escFixRef=null; } return; }
+  if(escFixRef) return;                       // já sincronizando
+  if(!escFixList.length) escFixList=escFixLoadLocal();
+  escFixRender();
+  if(!fbDB) return;
+  escFixRef=fbDB.ref(ESC_FIX_PATH);
+  escFixRef.on('value', function(snap){
+    var v=snap.val();
+    if(v && typeof v==='object'){
+      escFixList=Object.keys(v).map(function(k){ return escFixNorm(v[k], k); }).filter(function(f){ return f.nome; });
+      escFixSaveLocal();
+    }
+    escFixRender();
+  }, function(err){
+    escFixMsg('⚠ Não foi possível ler os plantões fixos do servidor ('+escapeHtml(err&&err.message||'erro')+'). Mostrando a cópia deste navegador.','amber');
+  });
+}
+function escFixWrite(f){                      // f = objeto (grava) ou id (remove)
+  escFixSaveLocal();
+  if(!fbDB) return;
+  try{
+    var pr=(typeof f==='string') ? fbDB.ref(ESC_FIX_PATH+'/'+f).remove() : fbDB.ref(ESC_FIX_PATH+'/'+f.id).set(f);
+    pr.catch(function(e){ escFixMsg('⚠ O servidor recusou a gravação ('+escapeHtml(e&&e.message||'erro')+'). Ficou salvo só neste navegador.','amber'); });
+  }catch(e){ console.warn('escFixWrite:', e && e.message); }
+}
+function escFixDt(s){ return s ? (s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4)) : ''; }
+function escFixDiasTxt(d){
+  if(d.length===7) return 'Todos os dias';
+  if(d.join(',')==='1,2,3,4,5') return 'Seg–Sex';
+  if(d.join(',')==='0,6') return 'Sáb + Dom';
+  return d.slice().sort(function(a,b){ return ((a+6)%7)-((b+6)%7); }).map(function(x){ return ESC_DOW_CURTO[x]; }).join(', ');
+}
+function escFixSemTxt(s){ return s.length ? (s.map(function(n){ return n+'ª'; }).join(', ')+' do mês') : 'Toda semana'; }
+function escFixOnDraw(){
+  var l=gv('escFixMesLbl'); if(l) l.textContent=monthLabel(escEnfKey());
+  var b=gv('escFixFillBtn'); if(b) b.textContent='⚡ Preencher '+monthLabel(escEnfKey())+' com os fixos';
+  if(escFixPrevKey && escFixPrevKey!==escEnfKey()){ var pv=gv('escFixPrev'); if(pv) pv.innerHTML=''; escFixPrevKey=null; }   // trocou de mês: a prévia antiga não vale mais
+}
+function escFixRender(){
+  var dl=gv('escFixNomes');
+  if(dl){
+    var nomes=PLANTONISTAS.slice(); escFixList.forEach(function(f){ if(nomes.indexOf(f.nome)<0) nomes.push(f.nome); });
+    dl.innerHTML=nomes.map(function(n){ return '<option value="'+escAttr(n)+'"></option>'; }).join('');
+  }
+  escFixOnDraw();
+  var box=gv('escFixLista'); if(!box) return;
+  if(!escFixList.length){ box.innerHTML='<div style="font-size:12.5px;color:var(--muted);padding:6px 0">Nenhum plantão fixo cadastrado ainda. Use <b>＋ Cadastrar plantão fixo</b> abaixo.</div>'; return; }
+  var lst=escFixList.slice().sort(function(a,b){ return a.nome.localeCompare(b.nome,'pt') || a.turno.localeCompare(b.turno); });
+  var th='style="text-align:left"';
+  var rows=lst.map(function(f){
+    var vig=(f.ini||f.fim) ? ((f.ini?escFixDt(f.ini):'…')+' → '+(f.fim?escFixDt(f.fim):'…')) : '—';
+    return '<tr style="'+(f.ativo?'':'opacity:.45')+'">'+
+      '<td style="text-align:center"><input type="checkbox" '+(f.ativo?'checked':'')+' style="width:auto;margin:0" title="Ativo: entra no preenchimento" onchange="escFixAtivo(\''+f.id+'\',this.checked)"></td>'+
+      '<td><b>'+escapeHtml(f.nome)+'</b></td><td>'+ESC_FIX_TURNOS[f.turno]+'</td><td>'+escFixDiasTxt(f.dias)+'</td><td>'+escFixSemTxt(f.semanas)+'</td>'+
+      '<td>'+(f.coluna==='auto'?'Automática':('Médico '+f.coluna))+'</td><td>'+vig+'</td><td style="text-align:center">'+(f.ponto?'🕒':'—')+'</td>'+
+      '<td style="white-space:nowrap"><button type="button" class="btn small ghost" onclick="escFixEditar(\''+f.id+'\')" title="Editar">✏️</button> '+
+      '<button type="button" class="btn small ghost danger" onclick="escFixExcluir(\''+f.id+'\')" title="Excluir">🗑</button></td></tr>';
+  }).join('');
+  box.innerHTML='<div style="overflow-x:auto"><table class="esc-tbl" style="min-width:760px;font-size:12.5px"><thead><tr>'+
+    '<th>Ativo</th><th '+th+'>Plantonista</th><th '+th+'>Turno</th><th '+th+'>Dias</th><th '+th+'>Semanas</th><th '+th+'>Coluna</th><th '+th+'>Vigência</th><th>Ponto</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function escFixDiasAtalho(q){
+  var set={uteis:[1,2,3,4,5], fds:[0,6], todos:[0,1,2,3,4,5,6], nenhum:[]}[q]||[];
+  [].slice.call(document.querySelectorAll('#escFixDias input')).forEach(function(i){ i.checked=set.indexOf(+i.value)>=0; });
+}
+function escFixLimparForm(){
+  escFixEditId=null;
+  ['escFixNome','escFixIni','escFixFim'].forEach(function(id){ var e=gv(id); if(e) e.value=''; });
+  if(gv('escFixTurno')) gv('escFixTurno').value='manha';
+  if(gv('escFixColuna')) gv('escFixColuna').value='auto';
+  if(gv('escFixPonto')) gv('escFixPonto').checked=false;
+  [].slice.call(document.querySelectorAll('#escFixDias input,#escFixSemanas input')).forEach(function(i){ i.checked=false; });
+  if(gv('escFixSaveBtn')) gv('escFixSaveBtn').textContent='＋ Adicionar plantão fixo';
+  if(gv('escFixCancelBtn')) gv('escFixCancelBtn').style.display='none';
+  if(gv('escFixFormTitle')) gv('escFixFormTitle').textContent='＋ Cadastrar plantão fixo';
+}
+function escFixEditar(id){
+  var f=escFixList.filter(function(x){ return x.id===id; })[0]; if(!f) return;
+  escFixLimparForm(); escFixEditId=id;
+  gv('escFixNome').value=f.nome; gv('escFixTurno').value=f.turno; gv('escFixColuna').value=String(f.coluna);
+  gv('escFixIni').value=f.ini; gv('escFixFim').value=f.fim; gv('escFixPonto').checked=f.ponto;
+  [].slice.call(document.querySelectorAll('#escFixDias input')).forEach(function(i){ i.checked=f.dias.indexOf(+i.value)>=0; });
+  [].slice.call(document.querySelectorAll('#escFixSemanas input')).forEach(function(i){ i.checked=f.semanas.indexOf(+i.value)>=0; });
+  gv('escFixSaveBtn').textContent='✓ Salvar alteração'; gv('escFixCancelBtn').style.display='inline-flex';
+  gv('escFixFormTitle').textContent='✏️ Editando: '+f.nome;
+  var fb=gv('escFixFormBox'); if(fb){ fb.open=true; try{ fb.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} }
+}
+function escFixSalvar(){
+  if(!escEnfIsGerente()) return;
+  var marc=function(sel){ return [].slice.call(document.querySelectorAll(sel+' input:checked')).map(function(i){ return +i.value; }); };
+  var id=escFixEditId || ('fx'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  var f=escFixNorm({ nome:gv('escFixNome').value, turno:gv('escFixTurno').value, coluna:gv('escFixColuna').value, dias:marc('#escFixDias'), semanas:marc('#escFixSemanas'),
+                     ponto:gv('escFixPonto').checked, ini:gv('escFixIni').value, fim:gv('escFixFim').value, ativo:true }, id);
+  if(!f.nome || escEnfIsNA(f.nome)) return escFixMsg('Informe o plantonista (ex.: "Gabriel (guarda VS)").','amber');
+  if(!f.dias.length) return escFixMsg('Marque pelo menos um dia da semana.','amber');
+  if(f.ini && f.fim && f.ini>f.fim) return escFixMsg('A vigência "a partir de" precisa ser antes do "até".','amber');
+  var i=-1; escFixList.forEach(function(x,k){ if(x.id===f.id) i=k; });
+  if(i>=0){ f.ativo=escFixList[i].ativo; escFixList[i]=f; } else escFixList.push(f);
+  escFixWrite(f); escFixLimparForm(); escFixRender();
+  escFixMsg((i>=0?'✔ Plantão fixo atualizado: ':'✔ Plantão fixo cadastrado: ')+'<b>'+escapeHtml(f.nome)+'</b> · '+ESC_FIX_TURNOS[f.turno]+' · '+escFixDiasTxt(f.dias)+
+    (escTipoFromName(f.nome)?'':' <span style="color:var(--amber)">— atenção: o nome não traz o tipo (guarda, guarda VS, prescritor…); no resumo ele aparece como "(sem tipo)".</span>'),'green');
+}
+function escFixAtivo(id, on){ var f=escFixList.filter(function(x){ return x.id===id; })[0]; if(!f) return; f.ativo=!!on; escFixWrite(f); escFixRender(); }
+function escFixExcluir(id){
+  var f=escFixList.filter(function(x){ return x.id===id; })[0]; if(!f) return;
+  if(!confirm('Excluir o plantão fixo de '+f.nome+' ('+ESC_FIX_TURNOS[f.turno]+', '+escFixDiasTxt(f.dias)+')?\n\nOs plantões já lançados na escala NÃO são apagados.')) return;
+  escFixList=escFixList.filter(function(x){ return x.id!==id; });
+  if(escFixEditId===id) escFixLimparForm();
+  escFixWrite(id); escFixRender(); escFixMsg('Plantão fixo excluído.','');
+}
+/* Calcula o que seria lançado no mês exibido (não grava nada). */
+function escFixPlanejar(){
+  var y=escEnfY, m=escEnfM, dim=new Date(y,m+1,0).getDate(), key=escEnfKey();
+  var w=JSON.parse(JSON.stringify(escEnfData||{}));
+  var pularFer=!gv('escFixPularFer') || gv('escFixPularFer').checked;
+  var ord=function(f){ return (f.turno==='12h'?0:2)+(f.coluna==='auto'?1:0); };   // 12h e coluna fixa reservam o lugar primeiro
+  var fixos=escFixList.filter(function(f){ return f.ativo && f.nome && f.dias.length; })
+    .map(function(f,i){ return {f:f,i:i}; }).sort(function(a,b){ return ord(a.f)-ord(b.f) || a.i-b.i; }).map(function(x){ return x.f; });
+  var mud={}, itens=[], confl=[], presentes=0, nFer=0;
+  for(var d=1; d<=dim; d++){
+    var wd=new Date(y,m,d).getDay(), nth=Math.ceil(d/7), iso=y+'-'+pad(m+1)+'-'+pad(d);
+    var rec=w[String(d)]||(w[String(d)]={});
+    var fer=pularFer && /feriad/i.test(rec.obs||'');
+    // quem ocupa o turno t da coluna c (a tarde vazia de um 12h marcado na manhã pertence ao plantonista da manhã)
+    var ocup=function(t,c){ var v=rec[t+'M'+c]||''; if(t==='tarde' && escEnfIsNA(v) && String(rec['manhaM'+c+'Carga'])==='12') v=rec['manhaM'+c]||''; return escEnfIsNA(v)?'':v; };
+    fixos.forEach(function(f){
+      if(f.dias.indexOf(wd)<0) return;
+      if(f.semanas.length && f.semanas.indexOf(nth)<0) return;
+      if((f.ini && iso<f.ini) || (f.fim && iso>f.fim)) return;
+      if(fer){ nFer++; return; }
+      var turnos=(f.turno==='12h')?['manha','tarde']:[f.turno];
+      if(turnos.some(function(t){ return [1,2].some(function(c){ return escEnfNomeEq(ocup(t,c), f.nome); }); })){ presentes++; return; }   // já está escalado
+      var cols=(f.coluna==='auto')?[1,2]:[f.coluna], col=null;
+      cols.some(function(c){ if(turnos.every(function(t){ return !ocup(t,c); })){ col=c; return true; } return false; });
+      if(col===null){
+        var quem=[]; cols.forEach(function(c){ turnos.forEach(function(t){ var o=ocup(t,c); if(o && quem.indexOf(o)<0) quem.push(o); }); });
+        confl.push({d:d, wd:wd, nome:f.nome, turno:f.turno, quem:quem.join(' / ')}); return;
+      }
+      var mk=(f.turno==='12h'?'manha':f.turno)+'M'+col;
+      rec[mk]=f.nome; mud[d+'/'+mk]=f.nome;
+      if(f.turno==='12h'){ rec[mk+'Carga']='12'; mud[d+'/'+mk+'Carga']='12'; }
+      if(f.ponto){ rec[mk+'Pt']=true; mud[d+'/'+mk+'Pt']=true; }
+      itens.push({d:d, wd:wd, nome:f.nome, turno:f.turno, col:col});
+    });
+  }
+  return {key:key, mud:mud, itens:itens, confl:confl, presentes:presentes, nFer:nFer};
+}
+function escFixPrevia(){
+  if(!escEnfIsGerente()) return;
+  var box=gv('escFixPrev'); if(!box) return;
+  escFixMsg('');
+  if(!escFixList.some(function(f){ return f.ativo; })){ box.innerHTML=''; escFixPrevKey=null; return escFixMsg('Nenhum plantão fixo ativo cadastrado. Cadastre abaixo em <b>＋ Cadastrar plantão fixo</b>.','amber'); }
+  var p=escFixPlanejar(); escFixPrevKey=p.key;
+  var dd=function(it){ return pad(it.d)+'/'+pad(escEnfM+1)+' ('+ESC_DOW_CURTO[it.wd]+')'; };
+  var h='<div style="margin:0 0 12px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--panel)">'+
+    '<div style="font-weight:800;margin-bottom:6px">Prévia — '+monthLabel(p.key)+': '+p.itens.length+' plantão(ões) a lançar</div>'+
+    '<div style="font-size:12.5px;color:var(--muted);margin-bottom:8px">Só células vazias. '+
+      (p.presentes?(p.presentes+' já estavam na escala (não duplicados). '):'')+
+      (p.nFer?(p.nFer+' pulado(s) por feriado. '):'')+
+      (p.confl.length?('<span style="color:var(--amber);font-weight:700">'+p.confl.length+' conflito(s): célula já ocupada — não lançados.</span>'):'')+'</div>';
+  if(p.itens.length){
+    h+='<div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:8px"><table class="esc-tbl" style="min-width:0;width:100%;font-size:12px;border:none"><thead><tr><th>Data</th><th>Turno</th><th>Plantonista</th><th>Coluna</th></tr></thead><tbody>'+
+      p.itens.map(function(it){ return '<tr><td>'+dd(it)+'</td><td>'+ESC_FIX_TURNOS[it.turno]+'</td><td>'+escapeHtml(it.nome)+'</td><td>Médico '+it.col+'</td></tr>'; }).join('')+'</tbody></table></div>';
+  }
+  if(p.confl.length){
+    h+='<div style="margin-top:8px;font-size:12.5px;color:var(--amber)"><b>Conflitos (resolva na grade, se quiser):</b><ul style="margin:4px 0 0 18px;padding:0">'+
+      p.confl.map(function(c){ return '<li>'+dd(c)+' · '+ESC_FIX_TURNOS[c.turno]+' · '+escapeHtml(c.nome)+' — ocupado por '+escapeHtml(c.quem||'outro plantonista')+'</li>'; }).join('')+'</ul></div>';
+  }
+  h+='<div class="form-foot" style="margin-top:10px">'+
+    (p.itens.length?'<button type="button" class="btn primary" onclick="escFixAplicar()">✔ Aplicar à escala de '+monthLabel(p.key)+'</button>':'<span style="font-size:12.5px;color:var(--muted)">Nada a lançar neste mês.</span>')+
+    '<button type="button" class="btn ghost" onclick="escFixDescartar()">Fechar prévia</button></div></div>';
+  box.innerHTML=h;
+}
+function escFixDescartar(){ var b=gv('escFixPrev'); if(b) b.innerHTML=''; escFixPrevKey=null; }
+function escFixAplicar(){
+  if(!escEnfIsGerente()) return;
+  if(escFixPrevKey!==escEnfKey()){ escFixPrevia(); return escFixMsg('O mês exibido mudou — confira a nova prévia antes de aplicar.','amber'); }
+  var p=escFixPlanejar();   // recalcula com a escala atual: nada lançado depois da prévia é sobrescrito
+  if(!p.itens.length){ escFixDescartar(); return escFixMsg('Nada a lançar: as células já estão ocupadas.','amber'); }
+  escEnfEnsureEdit();       // entra em edição guardando o estado anterior → "✕ Cancelar edição" desfaz o preenchimento
+  Object.keys(p.mud).forEach(function(k){ var pr=k.split('/'); if(!escEnfData[pr[0]]) escEnfData[pr[0]]={}; escEnfData[pr[0]][pr[1]]=p.mud[k]; });
+  escSaveLocal(p.key, escEnfData);
+  if(fbDB){
+    try{ fbDB.ref('escalaEnf/'+p.key).update(p.mud).catch(function(e){ escFixMsg('⚠ O servidor recusou o preenchimento ('+escapeHtml(e&&e.message||'erro')+'). A escala ficou só neste navegador.','amber'); }); }
+    catch(e){ console.warn('escFixAplicar:', e && e.message); }
+  }
+  escFixDescartar();
+  drawEscEnf();
+  escFixMsg('✔ '+p.itens.length+' plantão(ões) lançado(s) em '+monthLabel(p.key)+(p.confl.length?(' · <span style="color:var(--amber)">'+p.confl.length+' conflito(s) não lançado(s)</span>'):'')+
+    '. Confira a grade e clique em <b>✓ Salvar</b> (ou <b>✕ Cancelar edição</b> para desfazer).','green');
+  try{ toast(p.itens.length+' plantão(ões) fixo(s) lançado(s) em '+monthLabel(p.key)+'.'); }catch(e){}
+}
 function drawEscEnf(){
   escEnfMaybeSnap(); // captura/atualiza o snapshot do mês em edição (para "Cancelar")
   var gm=gv('escgImpMonth'); if(gm) gm.value=escEnfKey(); // destino da importação na grade acompanha o mês exibido
+  try{ escFixOnDraw(); }catch(e){}
   var t=document.getElementById('escEnfTitle');
   if(t) t.textContent='Escala Enfermaria — '+escEnfScopeLabel();
   var _eml=document.getElementById('escEnfExpMonthLbl'); if(_eml) _eml.textContent=monthLabel(escEnfKey());
