@@ -6037,7 +6037,8 @@ async function internParseFile(file,say){
   if(ext==='pdf'||tipo==='application/pdf'){ var p=await internParsePdf(await file.arrayBuffer(),say); return { fonte:p.ocr?'PDF escaneado (OCR)':'PDF', rows:p.rows, anchors:p.anchors, labels:p.labels, ocr:p.ocr, conf:p.conf }; }
   if(/^(jpe?g|png)$/.test(ext)||/^image\/(jpeg|png)$/.test(tipo)){
     var img=await internLoadImg(file);
-    try{ var o=await internOcr(img,say); return { fonte:'Imagem (OCR)', rows:o.rows, anchors:o.anchors, labels:o.labels, ocr:true, conf:o.conf }; }
+    var dims=[img.naturalWidth||img.width, img.naturalHeight||img.height];
+    try{ var o=await internOcr(img,say); return { fonte:'Imagem (OCR)', rows:o.rows, anchors:o.anchors, labels:o.labels, ocr:true, conf:o.conf, dims:dims }; }
     finally{ try{ URL.revokeObjectURL(img.src); }catch(e){} }
   }
   if(/^(heic|heif)$/.test(ext)) throw new Error('foto HEIC do iPhone: envie como JPG (Ajustes → Câmera → Formatos → "Mais compatível") ou faça um print da foto');
@@ -6097,7 +6098,11 @@ function internImpFile(ev){
   internParseFile(f,function(t){ internImpSay(t); }).then(function(res){
     if(internImpCancelado) return;
     if(res.ocr && ((res.anchors||0)<6 || !(res.labels>0))){
-      internImpSay('✕ Não consegui reconhecer a tabela do censo nesta '+(res.fonte.indexOf('PDF')===0?'digitalização':'imagem')+' (achei '+(res.anchors||0)+' de 21 títulos de coluna e '+(res.labels||0)+' leito(s)). A imagem não tem nitidez suficiente. Use o arquivo original do censo (Word, Excel ou PDF do sistema) ou uma foto bem nítida, de frente, sem sombra, com a folha inteira.','var(--red)');
+      var pequena=res.dims && Math.max(res.dims[0],res.dims[1])<2000;
+      internImpSay('✕ Não consegui reconhecer a tabela do censo nesta '+(res.fonte.indexOf('PDF')===0?'digitalização':'imagem')+' (achei '+(res.anchors||0)+' de 21 títulos de coluna e '+(res.labels||0)+' leito(s)). '
+        +(pequena?('A imagem tem só '+res.dims[0]+'×'+res.dims[1]+' pixels — pequena demais para ler uma tabela de 22 colunas (fotos enviadas pelo WhatsApp perdem resolução). Envie a foto como DOCUMENTO no WhatsApp (📎 → Documento) ou abra a plataforma no celular e use 📥 Importar lista → câmera, com a folha inteira ocupando a tela, de frente e sem sombra. ')
+                 :'A imagem não tem nitidez suficiente. Tire a foto com a folha inteira ocupando a tela, de frente, bem iluminada e sem sombra. ')
+        +'O caminho mais seguro é o arquivo original do censo (Word, Excel ou PDF do sistema).','var(--red)');
       return;
     }
     if(!res.rows.length){ internImpSay('✕ Nenhum paciente encontrado no arquivo. Confira se é a tabela do censo (com a linha de títulos: Nome Completo, Atendimento, Diagnóstico…).','var(--red)'); return; }
