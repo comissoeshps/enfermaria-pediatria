@@ -462,6 +462,46 @@
   .dz-sub{font-size:12px;color:var(--muted);margin-top:4px}
   body:not(.light) .dropzone{background:#141c2b}
   body:not(.light) .dropzone:hover,body:not(.light) .dropzone.drag{background:#1a2740}
+
+  /* ===== Internados — quadro de passagem de plantão ===== */
+  .int-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .int-top h2{margin:0;font-size:17px;font-weight:900}
+  .int-sync{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;margin-left:auto}
+  .int-sync .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+  .int-sync.on .dot{background:var(--green)} .int-sync.err .dot{background:var(--red)}
+  .int-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  @media(max-width:700px){ .int-grid{grid-template-columns:1fr} }
+  .int-card{border:1px solid var(--border);border-radius:12px;background:var(--panel-2);padding:12px 14px;display:flex;flex-direction:column;gap:8px;border-left:5px solid var(--accent)}
+  .int-card.semPend{border-left-color:var(--green)}
+  .int-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .int-leito{font-size:15px;font-weight:900}
+  .int-meta{font-size:12px;color:var(--muted);font-weight:600}
+  .int-line{font-size:13px;line-height:1.45}
+  .int-line b{font-weight:800}
+  .int-resumo{font-size:12.5px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
+  .int-resumo summary{cursor:pointer;color:var(--text);font-weight:700;font-size:12px;user-select:none}
+  .int-pend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+  .int-pend li{display:flex;align-items:flex-start;gap:8px;font-size:13px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 8px}
+  .int-pend li.done{opacity:.55}
+  .int-pend li.done .t{text-decoration:line-through}
+  .int-pend .t{flex:1 1 auto;word-break:break-word}
+  .int-pend .meta{font-size:10.5px;color:var(--muted);display:block;font-weight:600}
+  .int-pend input[type=checkbox]{margin-top:2px;width:17px;height:17px;flex-shrink:0;cursor:pointer}
+  .int-pend .px{cursor:pointer;color:var(--muted);font-weight:800;padding:0 2px}
+  .int-pend .px:hover{color:var(--red)}
+  .int-addrow{display:flex;gap:6px}
+  .int-addrow input{flex:1 1 auto;min-width:0}
+  .int-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
+  .int-form label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted);font-weight:700}
+  .int-form .full{grid-column:1 / -1}
+  .int-form input,.int-form select,.int-form textarea,.int-card textarea,.int-addrow input,.int-alta input,.int-alta select{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font:inherit;font-size:13px}
+  .int-form textarea,.int-card textarea{resize:vertical;min-height:54px}
+  .int-empty{padding:18px;border:1px dashed var(--border);border-radius:12px;color:var(--muted);text-align:center;font-size:13px}
+  .int-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px dashed var(--border);padding-top:8px;margin-top:2px}
+  .int-upd{font-size:10.5px;color:var(--muted)}
+  .int-alta{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;background:var(--panel);border:1px dashed var(--amber);border-radius:10px;padding:10px}
+  .int-alta label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);font-weight:700}
+  .int-secttl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800;margin-top:2px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
 </head>
@@ -503,6 +543,7 @@
   <nav class="hero-tabs">
     <button class="htab active" data-tab="perfil" onclick="switchTab('perfil')">Meu Perfil</button>
     <button class="htab " data-tab="escalaenf" onclick="switchTab('escalaenf')">Escala Enfermaria<span id="escPedBadge" style="display:none;margin-left:6px;background:var(--red);color:#fff;border-radius:10px;padding:0 7px;font-size:11px;font-weight:800;line-height:18px">0</span></button>
+    <button class="htab " data-tab="internados" onclick="switchTab('internados')">Internados<span id="internBadge" style="display:none;margin-left:6px;background:var(--accent);color:#04283a;border-radius:10px;padding:0 7px;font-size:11px;font-weight:800;line-height:18px">0</span></button>
     <span style="flex:1 1 auto"></span>
     <button class="htab" id="themeBtn" onclick="toggleTheme()" title="Modo dia/noite">☀️ Claro</button>
     <button class="htab" onclick="logout()" title="Sair da conta" style="color:var(--red)">⏻ Sair</button>
@@ -521,6 +562,45 @@
     <button class="stab" data-sub="escbackup" onclick="switchSub('escalaenf','escbackup')">Dados e back-up</button>
   </div>
 
+
+  <!-- ======== INTERNADOS — quadro de passagem de plantão ======== -->
+  <section class="view" id="view-internados">
+    <div class="card">
+      <div class="int-top">
+        <h2>🛏 Pacientes internados</h2>
+        <button class="btn primary small" onclick="internNovo()">➕ Adicionar paciente</button>
+        <span class="int-sync" id="internSync"><span class="dot"></span><span id="internSyncTxt">—</span></span>
+      </div>
+      <div id="internFormCard" style="display:none;border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:var(--panel-2)">
+        <div style="font-weight:800;font-size:14px" id="internFormTitle">Novo paciente</div>
+        <div class="int-form">
+          <label>Nº atendimento *<input id="intFnum" type="text" inputmode="numeric" placeholder="ex.: 1234567"></label>
+          <label>Leito<input id="intFleito" type="text" placeholder="ex.: 12B"></label>
+          <label>Data início<input id="intFdataIni" type="date"></label>
+          <label>Hora início<input id="intFhoraIni" type="time"></label>
+          <label>Idade<input id="intFidade" type="text" placeholder="ex.: 2a 3m"></label>
+          <label>Sexo<select id="intFsexo"><option value="">—</option><option value="F">F</option><option value="M">M</option></select></label>
+          <label>Clínica<input id="intFclinica" type="text" value="Pediatria"></label>
+          <label>Tipo de atendimento<input id="intFtipoAt" type="text" placeholder="ex.: Urgência"></label>
+          <label>CID<input id="intFcid" type="text" placeholder="ex.: J18.9"></label>
+          <label>Nome do CID<input id="intFnomeCid" type="text" placeholder="ex.: Pneumonia"></label>
+          <label class="full">Antibiótico / dia<input id="intFatb" type="text" placeholder="ex.: Ceftriaxona D3"></label>
+          <label class="full">Anamnese / resumo<textarea id="intFanamnese" rows="3" placeholder="História resumida, evolução, alergias…"></textarea></label>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn primary" onclick="internSalvar()">💾 Salvar</button>
+          <button class="btn ghost" onclick="internFormFechar()">Cancelar</button>
+          <span id="intFerr" style="color:var(--red);font-size:12.5px;align-self:center"></span>
+        </div>
+      </div>
+      <div id="internWrap"></div>
+      <details id="internAltasBox" style="margin-top:14px" ontoggle="internAltasToggle(this)">
+        <summary style="cursor:pointer;font-weight:800;font-size:13px;color:var(--muted)">🏥 Altas recentes (últimas 20)</summary>
+        <div id="internAltasWrap" style="margin-top:10px"></div>
+      </details>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted)">🔒 Visível apenas para a equipe logada. Estes dados <b>não</b> vão para a página pública da escala. Não registre nome completo do paciente — a identificação é pelo nº de atendimento e leito.</div>
+    </div>
+  </section>
 
   <!-- ======== ESCALA ENFERMARIA — grade ======== -->
   <section class="view" id="view-escgrid">
@@ -1338,6 +1418,7 @@ function proceedToApp(login){
   escEnfAttach();                          // pré-carrega a escala do mês atual (cache + listener ao vivo) já no login
   escPedAttach(); escCorrAttach(); escNotifBadge(); // solicitações (ponto + correções): listeners globais + badge
   chatBoot();                              // chat interno: presença + inbox + botão flutuante
+  internAttach();                          // internados: quadro de passagem (cache + listener ao vivo)
   switchTab('perfil');
   sessStartGuard(login);                   // regras de segurança: inatividade (1h) + 1 janela por login
 }
@@ -1345,6 +1426,7 @@ function logout(){
   sessStop(); idleStop();
   detachDataListener(); escEnfDetach(); escPedDetach(); escPedData={};
   escCorrDetach(); escCorrStore={}; escTrocaAceite={}; chatShutdown();
+  internDetach(); internData={}; var ib=document.getElementById('internBadge'); if(ib) ib.style.display='none';
   currentUser=null; CURRENT_UID=null; shifts=[]; escalaData=[]; escEnfData={};
   if(fbAuth){ try{ fbAuth.signOut(); }catch(e){} }
   var pb=document.getElementById('escPedBadge'); if(pb) pb.style.display='none';
@@ -1620,6 +1702,7 @@ function switchTab(tab){
   if(g){ var bar=document.getElementById(g.bar); if(bar) bar.style.display='flex'; switchSub(tab, curSub[tab]||g.def); return; }
   var v=document.getElementById("view-"+tab); if(v) v.classList.add("active");
   if(tab==="perfil") renderPerfil();
+  if(tab==="internados") internRender();
 }
 function switchSub(tab, sub){
   var g=TABGROUPS[tab]; if(!g) return;
@@ -5272,6 +5355,308 @@ function chatAudioEnviar(){
     if(blob.size > 950*1024){ try{ toast('Áudio muito longo para enviar. Grave um trecho menor.'); }catch(e){} return; }
     var r=new FileReader(); r.onload=function(){ chatEscrever('audio',{data:r.result}); }; r.readAsDataURL(blob);
   });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INTERNADOS — QUADRO DE PASSAGEM DE PLANTÃO (23/10/2026)
+   - Lista viva dos pacientes internados + pendências (checklist com autor/hora
+     e observações livres), compartilhada entre TODOS os médicos logados.
+   - Modelo de dados = o da antiga seção de internação (sem nome do paciente:
+     identificação por nº de atendimento + leito). NUNCA espelhado em escalaPublica.
+   - Firebase: nó `internados/pacientes/<id>` (ativo) e `internados/altas/<id>`
+     (arquivo de altas). Regra: leitura/escrita para qualquer autenticado
+     (ver claude/firebase-setup.md). Cache local `pl_internados` como fallback.
+   - Escrita: mutação local otimista → render → push do REGISTRO INTEIRO
+     (.set) para a nuvem; o listener .on('value') reconcilia entre aparelhos.
+   ════════════════════════════════════════════════════════════════ */
+var internRef=null, internData={}, internFbErr=null, internFrom='';
+var INTERN_ALTAS=['Alta melhorada','Alta a pedido','Transferência','Evasão','Óbito','Outro'];
+function internLocalSave(){ try{ store.set('pl_internados', JSON.stringify(internData||{})); }catch(e){} }
+function internLocalLoad(){ try{ return JSON.parse(store.get('pl_internados')||'{}')||{}; }catch(e){ return {}; } }
+function internVisible(){ var v=gv('view-internados'); return !!(v && v.classList.contains('active')); }
+function internDetach(){ if(internRef){ try{ internRef.off(); }catch(e){} internRef=null; } }
+function internAttach(){
+  internDetach();
+  internData=internLocalLoad(); internFbErr=null; internFrom=Object.keys(internData).length?'local':'vazio';
+  internBadgeUpd();
+  if(!fbDB){ if(internVisible()) internRender(); return; }
+  internRef=fbDB.ref('internados/pacientes');
+  internRef.on('value', function(snap){
+    internData=snap.val()||{}; internFbErr=null; internFrom='nuvem';
+    internLocalSave(); internBadgeUpd();
+    if(internVisible()) internRender();
+  }, function(err){
+    internFbErr=(err&&err.message)||'acesso negado';
+    console.warn('internados:', internFbErr);
+    internFrom='erro'; internBadgeUpd();
+    if(internVisible()) internRender();
+  });
+}
+function internBadgeUpd(){
+  var b=gv('internBadge'); if(!b) return;
+  var n=Object.keys(internData||{}).length;
+  b.textContent=n; b.style.display=n?'':'none';
+}
+/* ---- escrita: otimista local + push do registro inteiro ---- */
+function internPush(id){
+  internLocalSave(); internBadgeUpd(); internRender();
+  if(!fbDB){ toast('⚠ Sem conexão — alteração salva só neste aparelho.'); return; }
+  var val = internData[id]!==undefined ? internData[id] : null;
+  fbDB.ref('internados/pacientes/'+id).set(val).catch(function(e){
+    internFbErr=(e&&e.message)||'erro';
+    toast('⚠ Não gravou para a equipe: '+internFbErr+' (regra do nó "internados" publicada?)');
+    internRender();
+  });
+}
+function internStamp(r){ r.atualizadoPor=currentUser||''; r.atualizadoEm=Date.now(); }
+/* ---- formulário novo/editar ---- */
+var internEditId=null;
+function internFormFechar(){ var c=gv('internFormCard'); if(c) c.style.display='none'; internEditId=null; }
+function internNovo(){ internFormOpen(null); }
+function internEditar(id){ internFormOpen(id); }
+function internFormOpen(id){
+  internEditId=id;
+  var r=(id && internData[id])||{};
+  gv('internFormTitle').textContent = id ? ('Editar — Atend. '+(r.numAtendimento||'')) : 'Novo paciente';
+  gv('intFnum').value=r.numAtendimento||'';
+  gv('intFleito').value=r.leito||'';
+  var hj=new Date();
+  gv('intFdataIni').value=r.dataInicio|| (hj.getFullYear()+'-'+pad(hj.getMonth()+1)+'-'+pad(hj.getDate()));
+  gv('intFhoraIni').value=r.horaInicio|| (pad(hj.getHours())+':'+pad(hj.getMinutes()));
+  gv('intFidade').value=r.idade||'';
+  gv('intFsexo').value=r.sexo||'';
+  gv('intFclinica').value=(r.clinica!==undefined)?r.clinica:'Pediatria';
+  gv('intFtipoAt').value=r.tipoAtendimento||'';
+  gv('intFcid').value=r.cid||'';
+  gv('intFnomeCid').value=r.nomeCid||'';
+  gv('intFatb').value=r.antibiotico||'';
+  gv('intFanamnese').value=r.anamnese||'';
+  gv('intFerr').textContent='';
+  var c=gv('internFormCard'); c.style.display='block';
+  c.scrollIntoView({behavior:'smooth',block:'nearest'});
+  gv('intFnum').focus();
+}
+function internSalvar(){
+  var num=(gv('intFnum').value||'').trim();
+  if(!num){ gv('intFerr').textContent='Informe o nº de atendimento.'; return; }
+  // evita duplicar o mesmo atendimento em dois cartões
+  for(var k in internData){ if(k!==internEditId && String(internData[k].numAtendimento||'').trim()===num){ gv('intFerr').textContent='Já existe um cartão com esse nº de atendimento (leito '+(internData[k].leito||'—')+').'; return; } }
+  var id=internEditId || ('p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  var r=internData[id]||{ criadoPor:currentUser||'', criadoEm:Date.now(), pendencias:{}, obs:'' };
+  r.numAtendimento=num;
+  r.leito=(gv('intFleito').value||'').trim();
+  r.dataInicio=gv('intFdataIni').value||'';
+  r.horaInicio=gv('intFhoraIni').value||'';
+  r.idade=(gv('intFidade').value||'').trim();
+  r.sexo=gv('intFsexo').value||'';
+  r.clinica=(gv('intFclinica').value||'').trim();
+  r.tipoAtendimento=(gv('intFtipoAt').value||'').trim();
+  r.cid=(gv('intFcid').value||'').trim();
+  r.nomeCid=(gv('intFnomeCid').value||'').trim();
+  r.antibiotico=(gv('intFatb').value||'').trim();
+  r.anamnese=gv('intFanamnese').value||'';
+  internStamp(r);
+  internData[id]=r;
+  var ehEdicao=!!internEditId;
+  internFormFechar();
+  internPush(id);
+  toast(ehEdicao? 'Paciente atualizado.' : 'Paciente adicionado ao quadro.');
+}
+/* ---- pendências ---- */
+function internPendAdd(id){
+  var inp=gv('intPendTxt_'+id); if(!inp) return;
+  var t=(inp.value||'').trim(); if(!t){ inp.focus(); return; }
+  var r=internData[id]; if(!r) return;
+  r.pendencias=r.pendencias||{};
+  var pid='q'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  r.pendencias[pid]={ txt:t, feito:false, por:currentUser||'', em:Date.now() };
+  internStamp(r);
+  internPush(id);
+}
+function internPendKey(ev,id){ if(ev.key==='Enter'){ ev.preventDefault(); internPendAdd(id); } }
+function internPendToggle(id,pid,chk){
+  var r=internData[id]; if(!r||!r.pendencias||!r.pendencias[pid]) return;
+  var p=r.pendencias[pid];
+  p.feito=!!chk;
+  if(p.feito){ p.feitoPor=currentUser||''; p.feitoEm=Date.now(); }
+  else { p.feitoPor=null; p.feitoEm=null; }
+  internStamp(r);
+  internPush(id);
+}
+function internPendDel(id,pid){
+  var r=internData[id]; if(!r||!r.pendencias||!r.pendencias[pid]) return;
+  if(!confirm('Excluir esta pendência?\n\n"'+(r.pendencias[pid].txt||'')+'"')) return;
+  delete r.pendencias[pid];
+  internStamp(r);
+  internPush(id);
+}
+/* ---- observações livres ---- */
+function internObsSave(id){
+  var ta=gv('intObs_'+id); var r=internData[id]; if(!ta||!r) return;
+  r.obs=ta.value||'';
+  internStamp(r);
+  internPush(id);
+  toast('Observações salvas.');
+}
+/* ---- alta ---- */
+var internAltaId=null;
+function internAltaOpen(id){ internAltaId=(internAltaId===id)?null:id; internRender(); }
+function internAltaConfirm(id){
+  var r=internData[id]; if(!r) return;
+  if(!fbDB){ toast('⚠ Registrar alta exige conexão — o registro vai para o arquivo de altas na nuvem.'); return; }
+  var tipo=gv('intAltaTipo_'+id).value||'';
+  var nome=(gv('intAltaNome_'+id).value||'').trim();
+  var dt=gv('intAltaData_'+id).value||'';
+  var hr=gv('intAltaHora_'+id).value||'';
+  if(!tipo){ toast('Escolha o tipo de alta.'); return; }
+  if(!confirm('Confirmar alta do atendimento '+(r.numAtendimento||'')+' (leito '+(r.leito||'—')+')?\nO cartão sai do quadro e vai para "Altas recentes".')) return;
+  var rec={}; for(var k in r){ rec[k]=r[k]; }
+  rec.tipoAlta=tipo; rec.nomeAlta=nome; rec.dataFim=dt; rec.horaFim=hr;
+  rec.mesRef=(dt||'').slice(0,7);
+  rec.altaPor=currentUser||''; rec.altaEm=Date.now();
+  delete internData[id];
+  internAltaId=null;
+  fbDB.ref('internados/altas/'+id).set(rec).then(function(){
+    return fbDB.ref('internados/pacientes/'+id).set(null);
+  }).then(function(){ toast('Alta registrada.'); }).catch(function(e){
+    toast('⚠ Erro ao registrar a alta na nuvem: '+((e&&e.message)||'erro'));
+  });
+  internLocalSave(); internBadgeUpd(); internRender();
+}
+function internReinternar(id,rec){
+  if(!fbDB){ toast('Reinternar exige conexão.'); return; }
+  if(!confirm('Devolver o atendimento '+(rec.numAtendimento||'')+' ao quadro de internados?')) return;
+  var r={}; for(var k in rec){ r[k]=rec[k]; }
+  delete r.tipoAlta; delete r.nomeAlta; delete r.dataFim; delete r.horaFim; delete r.mesRef; delete r.altaPor; delete r.altaEm;
+  internStamp(r);
+  fbDB.ref('internados/pacientes/'+id).set(r).then(function(){
+    return fbDB.ref('internados/altas/'+id).set(null);
+  }).then(function(){ toast('Paciente devolvido ao quadro.'); internAltasLoad(); }).catch(function(e){
+    toast('⚠ Erro: '+((e&&e.message)||'erro'));
+  });
+}
+function internAltasToggle(el){ if(el && el.open) internAltasLoad(); }
+function internAltasLoad(){
+  var w=gv('internAltasWrap'); if(!w) return;
+  if(!fbDB){ w.innerHTML='<div class="int-empty">Sem conexão — altas não disponíveis.</div>'; return; }
+  w.innerHTML='<div class="int-empty">Carregando…</div>';
+  fbDB.ref('internados/altas').limitToLast(20).once('value').then(function(snap){
+    var v=snap.val()||{}; var ids=Object.keys(v);
+    if(!ids.length){ w.innerHTML='<div class="int-empty">Nenhuma alta registrada ainda.</div>'; return; }
+    ids.sort(function(a,b){ return (v[b].altaEm||0)-(v[a].altaEm||0); });
+    var h='';
+    ids.forEach(function(id){ var r=v[id];
+      h+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12.5px">'
+        +'<b>Atend. '+escAttr(r.numAtendimento||'—')+'</b>'
+        +'<span class="int-meta">leito '+escAttr(r.leito||'—')+' · '+escAttr(r.idade||'—')+'/'+escAttr(r.sexo||'—')+' · '+escAttr(r.cid||'')+' '+escAttr(r.nomeCid||'')+'</span>'
+        +'<span class="int-meta">'+escAttr(r.tipoAlta||'')+(r.nomeAlta?(' ('+escAttr(r.nomeAlta)+')'):'')+' em '+internFmtDH(r.dataFim,r.horaFim)+' · por '+escAttr(r.altaPor||'—')+'</span>'
+        +'<span style="flex:1 1 auto"></span>'
+        +'<button class="btn small" onclick="internReinternar(\''+id+'\', internAltasCache[\''+id+'\'])">↩ Reinternar</button>'
+        +'</div>';
+    });
+    internAltasCache=v;
+    w.innerHTML=h;
+  }).catch(function(e){
+    w.innerHTML='<div class="int-empty">Erro ao ler as altas: '+escAttr((e&&e.message)||'erro')+'</div>';
+  });
+}
+var internAltasCache={};
+/* ---- utilitários de exibição ---- */
+function internFmtDH(d,h){
+  if(!d) return '—';
+  var p=d.split('-'); var s=(p.length===3)?(p[2]+'/'+p[1]+'/'+p[0]):d;
+  return s+(h?(' '+h):'');
+}
+function internDiaN(r){
+  if(!r.dataInicio) return null;
+  var p=r.dataInicio.split('-'); if(p.length!==3) return null;
+  var ini=new Date(+p[0], +p[1]-1, +p[2]);
+  var hj=new Date(); hj=new Date(hj.getFullYear(),hj.getMonth(),hj.getDate());
+  var n=Math.round((hj-ini)/86400000)+1;
+  return (n>=1 && n<1000)?n:null;
+}
+function internFmtTs(ts){
+  if(!ts) return '';
+  var d=new Date(ts);
+  return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+/* ---- render ---- */
+function internSyncUI(){
+  var el=gv('internSync'), t=gv('internSyncTxt'); if(!el) return;
+  if(internFbErr){ el.className='int-sync err'; t.textContent='sem acesso à nuvem'; }
+  else if(internFrom==='nuvem'){ el.className='int-sync on'; t.textContent='Ao vivo — compartilhado com a equipe'; }
+  else { el.className='int-sync'; t.textContent=(internFrom==='local')?'cópia local (offline)':'conectando…'; }
+}
+function internRender(){
+  var w=gv('internWrap'); if(!w) return;
+  internSyncUI();
+  var ids=Object.keys(internData||{});
+  if(!ids.length){
+    w.innerHTML='<div class="int-empty">Nenhum paciente no quadro.'+(internFbErr?('<br><span style="color:var(--red)">⚠ '+escAttr(internFbErr)+' — a regra do nó "internados" foi publicada no Firebase?</span>'):' Clique em <b>➕ Adicionar paciente</b> para começar a passagem.')+'</div>';
+    return;
+  }
+  // ordena por leito (numérico quando possível), depois nº de atendimento
+  ids.sort(function(a,b){
+    var ra=internData[a], rb=internData[b];
+    var la=parseInt(ra.leito,10), lb=parseInt(rb.leito,10);
+    if(!isNaN(la)&&!isNaN(lb)&&la!==lb) return la-lb;
+    var sa=(ra.leito||'￿'), sb=(rb.leito||'￿');
+    if(sa!==sb) return sa<sb?-1:1;
+    return String(ra.numAtendimento||'')<String(rb.numAtendimento||'')?-1:1;
+  });
+  var h='<div class="int-grid">';
+  ids.forEach(function(id){
+    var r=internData[id]||{};
+    var pend=r.pendencias||{};
+    var pids=Object.keys(pend).sort(function(a,b){ return (pend[a].em||0)-(pend[b].em||0); });
+    var abertas=pids.filter(function(p){ return !pend[p].feito; }).length;
+    var diaN=internDiaN(r);
+    h+='<div class="int-card'+(abertas?'':' semPend')+'">';
+    h+='<div class="int-head"><span class="int-leito">🛏 '+(r.leito?('Leito '+escAttr(r.leito)):'Sem leito')+' · Atend. '+escAttr(r.numAtendimento||'—')+'</span>'
+      +'<span class="int-meta">'+escAttr(r.idade||'—')+' · '+escAttr(r.sexo||'—')+(diaN?(' · '+diaN+'º dia'):'')+'</span></div>';
+    h+='<div class="int-line"><b>'+escAttr(r.cid||'—')+'</b>'+(r.nomeCid?(' — '+escAttr(r.nomeCid)):'')
+      +(r.clinica?(' · '+escAttr(r.clinica)):'')+(r.tipoAtendimento?(' · '+escAttr(r.tipoAtendimento)):'')
+      +'<br><span class="int-meta">Internado em '+internFmtDH(r.dataInicio,r.horaInicio)+'</span></div>';
+    if(r.antibiotico) h+='<div class="int-line">💊 <b>ATB:</b> '+escAttr(r.antibiotico)+'</div>';
+    if(r.anamnese) h+='<details class="int-resumo"'+(String(r.anamnese).length<=120?' open':'')+'><summary>📋 Resumo</summary>'+escAttr(r.anamnese)+'</details>';
+    h+='<div class="int-secttl">Pendências'+(pids.length?(' — '+abertas+' aberta(s) de '+pids.length):'')+'</div>';
+    h+='<ul class="int-pend">';
+    if(!pids.length) h+='<li style="border-style:dashed;color:var(--muted)">Sem pendências registradas.</li>';
+    pids.forEach(function(pid){
+      var p=pend[pid];
+      h+='<li class="'+(p.feito?'done':'')+'">'
+        +'<input type="checkbox" '+(p.feito?'checked':'')+' onchange="internPendToggle(\''+id+'\',\''+pid+'\',this.checked)" title="Marcar como feita">'
+        +'<span class="t">'+escAttr(p.txt||'')
+        +'<span class="meta">'+escAttr(p.por||'—')+' · '+internFmtTs(p.em)
+        +(p.feito?(' &nbsp;→&nbsp; ✔ '+escAttr(p.feitoPor||'—')+' · '+internFmtTs(p.feitoEm)):'')
+        +'</span></span>'
+        +'<span class="px" onclick="internPendDel(\''+id+'\',\''+pid+'\')" title="Excluir pendência">✕</span>'
+        +'</li>';
+    });
+    h+='</ul>';
+    h+='<div class="int-addrow"><input id="intPendTxt_'+id+'" type="text" placeholder="Nova pendência (ex.: colher hemocultura 18h)" onkeydown="internPendKey(event,\''+id+'\')"><button class="btn small" onclick="internPendAdd(\''+id+'\')">➕</button></div>';
+    h+='<div class="int-secttl">Observações da passagem</div>';
+    h+='<div style="display:flex;gap:6px;align-items:flex-start"><textarea id="intObs_'+id+'" rows="2" style="flex:1 1 auto;min-width:0" placeholder="Texto livre (dieta, acesso, previsão de alta…)">'+escAttr(r.obs||'')+'</textarea><button class="btn small" onclick="internObsSave(\''+id+'\')" title="Salvar observações">💾</button></div>';
+    if(internAltaId===id){
+      var hj=new Date();
+      h+='<div class="int-alta">'
+        +'<label>Tipo de alta<select id="intAltaTipo_'+id+'">'+INTERN_ALTAS.map(function(x){ return '<option>'+x+'</option>'; }).join('')+'</select></label>'
+        +'<label>Detalhe (opcional)<input id="intAltaNome_'+id+'" type="text" placeholder="ex.: p/ UPA Centro"></label>'
+        +'<label>Data<input id="intAltaData_'+id+'" type="date" value="'+hj.getFullYear()+'-'+pad(hj.getMonth()+1)+'-'+pad(hj.getDate())+'"></label>'
+        +'<label>Hora<input id="intAltaHora_'+id+'" type="time" value="'+pad(hj.getHours())+':'+pad(hj.getMinutes())+'"></label>'
+        +'<button class="btn small primary" onclick="internAltaConfirm(\''+id+'\')">✔ Confirmar alta</button>'
+        +'<button class="btn small ghost" onclick="internAltaOpen(\''+id+'\')">Cancelar</button>'
+        +'</div>';
+    }
+    h+='<div class="int-foot">'
+      +'<span class="int-upd">'+(r.atualizadoPor?('Atualizado por '+escAttr(r.atualizadoPor)+' · '+internFmtTs(r.atualizadoEm)):'')+'</span>'
+      +'<span style="display:flex;gap:6px"><button class="btn small" onclick="internEditar(\''+id+'\')">✏️ Editar</button>'
+      +'<button class="btn small" style="color:var(--amber);border-color:var(--amber)" onclick="internAltaOpen(\''+id+'\')">🏥 Alta</button></span>'
+      +'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  w.innerHTML=h;
 }
 
 /* ===== Cabeçalho auto-oculto no scroll (só telas <=768px) =====
