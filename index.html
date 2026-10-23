@@ -569,23 +569,35 @@
       <div class="int-top">
         <h2>🛏 Pacientes internados</h2>
         <button class="btn primary small" onclick="internNovo()">➕ Adicionar paciente</button>
+        <button class="btn small" onclick="gv('internImpFile').click()" title="Importar vários pacientes de um arquivo JSON">📥 Importar lista</button>
+        <input type="file" id="internImpFile" accept=".json,application/json" style="display:none" onchange="internImportFile(event)">
         <span class="int-sync" id="internSync"><span class="dot"></span><span id="internSyncTxt">—</span></span>
       </div>
       <div id="internFormCard" style="display:none;border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:var(--panel-2)">
         <div style="font-weight:800;font-size:14px" id="internFormTitle">Novo paciente</div>
         <div class="int-form">
-          <label>Nº atendimento *<input id="intFnum" type="text" inputmode="numeric" placeholder="ex.: 1234567"></label>
-          <label>Leito<input id="intFleito" type="text" placeholder="ex.: 12B"></label>
-          <label>Data início<input id="intFdataIni" type="date"></label>
-          <label>Hora início<input id="intFhoraIni" type="time"></label>
-          <label>Idade<input id="intFidade" type="text" placeholder="ex.: 2a 3m"></label>
-          <label>Sexo<select id="intFsexo"><option value="">—</option><option value="F">F</option><option value="M">M</option></select></label>
-          <label>Clínica<input id="intFclinica" type="text" value="Pediatria"></label>
-          <label>Tipo de atendimento<input id="intFtipoAt" type="text" placeholder="ex.: Urgência"></label>
-          <label>CID<input id="intFcid" type="text" placeholder="ex.: J18.9"></label>
-          <label>Nome do CID<input id="intFnomeCid" type="text" placeholder="ex.: Pneumonia"></label>
-          <label class="full">Antibiótico / dia<input id="intFatb" type="text" placeholder="ex.: Ceftriaxona D3"></label>
-          <label class="full">Anamnese / resumo<textarea id="intFanamnese" rows="3" placeholder="História resumida, evolução, alergias…"></textarea></label>
+          <label>Leito<input id="intFleito" type="text" placeholder="ex.: 206A"></label>
+          <label>Data admissão<input id="intFdataIni" type="date"></label>
+          <label class="full">Nome completo<input id="intFnome" type="text" placeholder="nome do paciente"></label>
+          <label>Nº atendimento *<input id="intFnum" type="text" inputmode="numeric" placeholder="ex.: 193002725"></label>
+          <label>Peso<input id="intFpeso" type="text" placeholder="ex.: 10KG"></label>
+          <label>Data nascimento<input id="intFnasc" type="text" placeholder="ex.: 31/08/2024"></label>
+          <label>Idade<input id="intFidade" type="text" placeholder="ex.: 1,1A"></label>
+          <label>Acomodação<select id="intFacom"><option value="">—</option><option>CAMA</option><option>BERÇO</option></select></label>
+          <label>Convênio<input id="intFconv" type="text" placeholder="ex.: Bradesco Saúde"></label>
+          <label>Especialidade<input id="intFesp" type="text" value="PEDIATRIA"></label>
+          <label class="full">Diagnóstico<input id="intFdiag" type="text" placeholder="ex.: BCP"></label>
+          <label class="full">Comorbidade<input id="intFcomorb" type="text" placeholder="ex.: SEM COMORBIDADES"></label>
+          <label class="full">Plano e meta terapêutica<input id="intFplano" type="text" placeholder="ex.: MELHORA CLÍNICA ANTIBIOTICOTERAPIA"></label>
+          <label>Data prevista alta<input id="intFprev" type="text" placeholder="ex.: 25/10 ou N"></label>
+          <label>Jejum / Dieta<input id="intFdieta" type="text" placeholder="ex.: DIETA GERAL"></label>
+          <label class="full">Exames / procedimentos pendentes<input id="intFexam" type="text" placeholder="ex.: EXAMES ROTINA 21/10 OK · N"></label>
+          <label class="full">Antibiótico (dias e qual / febre)<input id="intFatb" type="text" placeholder="ex.: CEFTRIAXONA D1 12/12H"></label>
+          <label>Dispositivos<input id="intFdisp" type="text" placeholder="ex.: AVP MSD 18/10"></label>
+          <label>Ponto de atenção (watcher)<input id="intFwatch" type="text" value="QUEDA, BRONCOASPIRAÇÃO, INFECÇÃO"></label>
+          <label>Longa permanência?<select id="intFlonga"><option value="">—</option><option>N</option><option>S</option></select></label>
+          <label>Visita clínica (S/N)<select id="intFvisita"><option value="">—</option><option>S</option><option>N</option></select></label>
+          <label class="full">Pendência equipe multidisciplinar<input id="intFmulti" type="text" placeholder="ex.: AV DA FISIO · N"></label>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn primary" onclick="internSalvar()">💾 Salvar</button>
@@ -598,7 +610,7 @@
         <summary style="cursor:pointer;font-weight:800;font-size:13px;color:var(--muted)">🏥 Altas recentes (últimas 20)</summary>
         <div id="internAltasWrap" style="margin-top:10px"></div>
       </details>
-      <div style="margin-top:12px;font-size:11px;color:var(--muted)">🔒 Visível apenas para a equipe logada. Estes dados <b>não</b> vão para a página pública da escala. Não registre nome completo do paciente — a identificação é pelo nº de atendimento e leito.</div>
+      <div style="margin-top:12px;font-size:11px;color:var(--muted)">🔒 Dados clínicos visíveis apenas para a equipe logada — <b>nunca</b> vão para a página pública da escala. Com nome completo registrado, a proteção depende das senhas da equipe: mantenha-as fortes e não as compartilhe.</div>
     </div>
   </section>
 
@@ -5417,24 +5429,34 @@ function internEditar(id){ internFormOpen(id); }
 function internFormOpen(id){
   internEditId=id;
   var r=(id && internData[id])||{};
-  gv('internFormTitle').textContent = id ? ('Editar — Atend. '+(r.numAtendimento||'')) : 'Novo paciente';
-  gv('intFnum').value=r.numAtendimento||'';
-  gv('intFleito').value=r.leito||'';
+  gv('internFormTitle').textContent = id ? ('Editar — '+(r.nome||('Atend. '+(r.numAtendimento||'')))) : 'Novo paciente';
   var hj=new Date();
+  gv('intFleito').value=r.leito||'';
   gv('intFdataIni').value=r.dataInicio|| (hj.getFullYear()+'-'+pad(hj.getMonth()+1)+'-'+pad(hj.getDate()));
-  gv('intFhoraIni').value=r.horaInicio|| (pad(hj.getHours())+':'+pad(hj.getMinutes()));
+  gv('intFnome').value=r.nome||'';
+  gv('intFnum').value=r.numAtendimento||'';
+  gv('intFpeso').value=r.peso||'';
+  gv('intFnasc').value=r.dataNasc||'';
   gv('intFidade').value=r.idade||'';
-  gv('intFsexo').value=r.sexo||'';
-  gv('intFclinica').value=(r.clinica!==undefined)?r.clinica:'Pediatria';
-  gv('intFtipoAt').value=r.tipoAtendimento||'';
-  gv('intFcid').value=r.cid||'';
-  gv('intFnomeCid').value=r.nomeCid||'';
+  gv('intFacom').value=r.acomodacao||'';
+  gv('intFconv').value=r.convenio||'';
+  gv('intFesp').value=(r.especialidade!==undefined)?r.especialidade:'PEDIATRIA';
+  gv('intFdiag').value=r.diagnostico||'';
+  gv('intFcomorb').value=r.comorbidade||'';
+  gv('intFplano').value=r.planoMeta||'';
+  gv('intFprev').value=r.prevAlta||'';
+  gv('intFdieta').value=r.dieta||'';
+  gv('intFexam').value=r.examesPend||'';
   gv('intFatb').value=r.antibiotico||'';
-  gv('intFanamnese').value=r.anamnese||'';
+  gv('intFdisp').value=r.dispositivos||'';
+  gv('intFwatch').value=(r.pontoAtencao!==undefined)?r.pontoAtencao:'QUEDA, BRONCOASPIRAÇÃO, INFECÇÃO';
+  gv('intFlonga').value=r.longaPerm||'';
+  gv('intFvisita').value=r.visita||'';
+  gv('intFmulti').value=r.pendMulti||'';
   gv('intFerr').textContent='';
   var c=gv('internFormCard'); c.style.display='block';
   c.scrollIntoView({behavior:'smooth',block:'nearest'});
-  gv('intFnum').focus();
+  gv('intFleito').focus();
 }
 function internSalvar(){
   var num=(gv('intFnum').value||'').trim();
@@ -5446,15 +5468,25 @@ function internSalvar(){
   r.numAtendimento=num;
   r.leito=(gv('intFleito').value||'').trim();
   r.dataInicio=gv('intFdataIni').value||'';
-  r.horaInicio=gv('intFhoraIni').value||'';
+  r.nome=(gv('intFnome').value||'').trim();
+  r.peso=(gv('intFpeso').value||'').trim();
+  r.dataNasc=(gv('intFnasc').value||'').trim();
   r.idade=(gv('intFidade').value||'').trim();
-  r.sexo=gv('intFsexo').value||'';
-  r.clinica=(gv('intFclinica').value||'').trim();
-  r.tipoAtendimento=(gv('intFtipoAt').value||'').trim();
-  r.cid=(gv('intFcid').value||'').trim();
-  r.nomeCid=(gv('intFnomeCid').value||'').trim();
+  r.acomodacao=gv('intFacom').value||'';
+  r.convenio=(gv('intFconv').value||'').trim();
+  r.especialidade=(gv('intFesp').value||'').trim();
+  r.diagnostico=(gv('intFdiag').value||'').trim();
+  r.comorbidade=(gv('intFcomorb').value||'').trim();
+  r.planoMeta=(gv('intFplano').value||'').trim();
+  r.prevAlta=(gv('intFprev').value||'').trim();
+  r.dieta=(gv('intFdieta').value||'').trim();
+  r.examesPend=(gv('intFexam').value||'').trim();
   r.antibiotico=(gv('intFatb').value||'').trim();
-  r.anamnese=gv('intFanamnese').value||'';
+  r.dispositivos=(gv('intFdisp').value||'').trim();
+  r.pontoAtencao=(gv('intFwatch').value||'').trim();
+  r.longaPerm=gv('intFlonga').value||'';
+  r.visita=gv('intFvisita').value||'';
+  r.pendMulti=(gv('intFmulti').value||'').trim();
   internStamp(r);
   internData[id]=r;
   var ehEdicao=!!internEditId;
@@ -5547,8 +5579,8 @@ function internAltasLoad(){
     var h='';
     ids.forEach(function(id){ var r=v[id];
       h+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;font-size:12.5px">'
-        +'<b>Atend. '+escAttr(r.numAtendimento||'—')+'</b>'
-        +'<span class="int-meta">leito '+escAttr(r.leito||'—')+' · '+escAttr(r.idade||'—')+'/'+escAttr(r.sexo||'—')+' · '+escAttr(r.cid||'')+' '+escAttr(r.nomeCid||'')+'</span>'
+        +'<b>'+escAttr(r.nome||('Atend. '+(r.numAtendimento||'—')))+'</b>'
+        +'<span class="int-meta">Atend. '+escAttr(r.numAtendimento||'—')+' · leito '+escAttr(r.leito||'—')+' · '+escAttr(r.idade||'—')+' · '+escAttr(r.diagnostico||'')+'</span>'
         +'<span class="int-meta">'+escAttr(r.tipoAlta||'')+(r.nomeAlta?(' ('+escAttr(r.nomeAlta)+')'):'')+' em '+internFmtDH(r.dataFim,r.horaFim)+' · por '+escAttr(r.altaPor||'—')+'</span>'
         +'<span style="flex:1 1 auto"></span>'
         +'<button class="btn small" onclick="internReinternar(\''+id+'\', internAltasCache[\''+id+'\'])">↩ Reinternar</button>'
@@ -5561,6 +5593,53 @@ function internAltasLoad(){
   });
 }
 var internAltasCache={};
+/* ---- importação em lote (JSON) ----
+   Arquivo: array de objetos com os campos do cartão (numAtendimento obrigatório).
+   Só ADICIONA: atendimento já presente no quadro é pulado (nunca sobrescreve). */
+var INTERN_CAMPOS=['numAtendimento','leito','nome','dataInicio','peso','dataNasc','idade','acomodacao','convenio','especialidade','diagnostico','comorbidade','planoMeta','prevAlta','dieta','examesPend','antibiotico','dispositivos','pontoAtencao','longaPerm','visita','pendMulti','obs','anamnese'];
+function internImportFile(ev){
+  var f=ev.target && ev.target.files && ev.target.files[0];
+  ev.target.value='';
+  if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var lista=null;
+    try{ lista=JSON.parse(rd.result); }catch(e){ toast('⚠ Arquivo inválido: não é um JSON legível.'); return; }
+    if(!Array.isArray(lista)){ toast('⚠ O JSON precisa ser uma LISTA de pacientes [ {...}, {...} ].'); return; }
+    var atuais={}; for(var k in internData){ atuais[String(internData[k].numAtendimento||'').trim()]=true; }
+    var novos=[], pulados=[], semNum=0;
+    lista.forEach(function(o){
+      if(!o || typeof o!=='object') return;
+      var num=String(o.numAtendimento||'').trim();
+      if(!num){ semNum++; return; }
+      if(atuais[num]){ pulados.push(num); return; }
+      atuais[num]=true;
+      var r={ criadoPor:(currentUser||'')+' (importação)', criadoEm:Date.now(), pendencias:{}, obs:'' };
+      INTERN_CAMPOS.forEach(function(c){ if(o[c]!==undefined && o[c]!==null) r[c]=String(o[c]); });
+      if(o.pendencias && typeof o.pendencias==='object') r.pendencias=o.pendencias;
+      internStamp(r);
+      novos.push(r);
+    });
+    if(!novos.length){ toast('Nada a importar: '+(pulados.length? pulados.length+' já estavam no quadro.' : 'nenhum paciente válido no arquivo.')); return; }
+    var msg='Importar '+novos.length+' paciente(s) para o quadro?';
+    if(pulados.length) msg+='\n(Pulados por já existirem: '+pulados.join(', ')+')';
+    if(semNum) msg+='\n('+semNum+' registro(s) sem nº de atendimento serão ignorados)';
+    if(!confirm(msg)) return;
+    var upd={};
+    novos.forEach(function(r,i){
+      var id='p'+Date.now().toString(36)+i.toString(36)+Math.random().toString(36).slice(2,5);
+      internData[id]=r; upd[id]=r;
+    });
+    internLocalSave(); internBadgeUpd(); internRender();
+    if(!fbDB){ toast('⚠ Sem conexão — importação salva só neste aparelho.'); return; }
+    fbDB.ref('internados/pacientes').update(upd).then(function(){
+      toast(novos.length+' paciente(s) importado(s) e compartilhado(s) com a equipe.');
+    }).catch(function(e){
+      toast('⚠ Importou localmente, mas não gravou para a equipe: '+((e&&e.message)||'erro'));
+    });
+  };
+  rd.readAsText(f);
+}
 /* ---- utilitários de exibição ---- */
 function internFmtDH(d,h){
   if(!d) return '—';
@@ -5612,12 +5691,24 @@ function internRender(){
     var abertas=pids.filter(function(p){ return !pend[p].feito; }).length;
     var diaN=internDiaN(r);
     h+='<div class="int-card'+(abertas?'':' semPend')+'">';
-    h+='<div class="int-head"><span class="int-leito">🛏 '+(r.leito?('Leito '+escAttr(r.leito)):'Sem leito')+' · Atend. '+escAttr(r.numAtendimento||'—')+'</span>'
-      +'<span class="int-meta">'+escAttr(r.idade||'—')+' · '+escAttr(r.sexo||'—')+(diaN?(' · '+diaN+'º dia'):'')+'</span></div>';
-    h+='<div class="int-line"><b>'+escAttr(r.cid||'—')+'</b>'+(r.nomeCid?(' — '+escAttr(r.nomeCid)):'')
-      +(r.clinica?(' · '+escAttr(r.clinica)):'')+(r.tipoAtendimento?(' · '+escAttr(r.tipoAtendimento)):'')
-      +'<br><span class="int-meta">Internado em '+internFmtDH(r.dataInicio,r.horaInicio)+'</span></div>';
+    h+='<div class="int-head"><span class="int-leito">🛏 '+(r.leito?('Leito '+escAttr(r.leito)):'Sem leito')+(r.nome?(' · '+escAttr(r.nome)):'')+'</span>'
+      +'<span class="int-meta">'+escAttr(r.idade||'—')+(r.peso?(' · '+escAttr(r.peso)):'')+(r.acomodacao?(' · '+escAttr(r.acomodacao)):'')+(diaN?(' · '+diaN+'º dia'):'')+'</span></div>';
+    h+='<div class="int-line"><span class="int-meta">Atend. '+escAttr(r.numAtendimento||'—')
+      +(r.dataNasc?(' · Nasc. '+escAttr(r.dataNasc)):'')
+      +' · Admissão '+internFmtDH(r.dataInicio,r.horaInicio)
+      +(r.convenio?(' · '+escAttr(r.convenio)):'')
+      +(r.especialidade?(' · '+escAttr(r.especialidade)):'')+'</span></div>';
+    h+='<div class="int-line"><b>'+escAttr(r.diagnostico||((r.cid||'')+(r.nomeCid?(' — '+r.nomeCid):''))||'—')+'</b>'
+      +((r.comorbidade)?('<br><span class="int-meta">Comorbidade: '+escAttr(r.comorbidade)+'</span>'):'')+'</div>';
+    if(r.planoMeta||r.prevAlta) h+='<div class="int-line">🎯 <b>Plano:</b> '+escAttr(r.planoMeta||'—')+(r.prevAlta?(' · <b>Prev. alta:</b> '+escAttr(r.prevAlta)):'')+'</div>';
+    if(r.dieta) h+='<div class="int-line">🍽 <b>Dieta:</b> '+escAttr(r.dieta)+'</div>';
     if(r.antibiotico) h+='<div class="int-line">💊 <b>ATB:</b> '+escAttr(r.antibiotico)+'</div>';
+    if(r.examesPend) h+='<div class="int-line">🧪 <b>Exames/proced.:</b> '+escAttr(r.examesPend)+'</div>';
+    if(r.dispositivos) h+='<div class="int-line">🔌 <b>Dispositivos:</b> '+escAttr(r.dispositivos)+'</div>';
+    if(r.pontoAtencao) h+='<div class="int-line">⚠️ <b>Ponto de atenção:</b> '+escAttr(r.pontoAtencao)+'</div>';
+    if(r.pendMulti||r.longaPerm||r.visita) h+='<div class="int-line">👥 <b>Equipe multi:</b> '+escAttr(r.pendMulti||'—')
+      +(r.longaPerm?(' · Longa perm.: '+escAttr(r.longaPerm)):'')
+      +(r.visita?(' · Visita clínica: '+escAttr(r.visita)):'')+'</div>';
     if(r.anamnese) h+='<details class="int-resumo"'+(String(r.anamnese).length<=120?' open':'')+'><summary>📋 Resumo</summary>'+escAttr(r.anamnese)+'</details>';
     h+='<div class="int-secttl">Pendências'+(pids.length?(' — '+abertas+' aberta(s) de '+pids.length):'')+'</div>';
     h+='<ul class="int-pend">';
