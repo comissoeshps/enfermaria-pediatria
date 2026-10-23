@@ -502,6 +502,46 @@
   .int-alta{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;background:var(--panel);border:1px dashed var(--amber);border-radius:10px;padding:10px}
   .int-alta label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);font-weight:700}
   .int-secttl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800;margin-top:2px}
+  /* --- Tabela no layout do censo impresso --- */
+  .int-tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #9fb0c9;border-radius:8px}
+  body:not(.light) .int-tblwrap{border-color:#40506b}
+  .int-tbl{border-collapse:collapse;width:100%;min-width:2350px;font-size:11px;line-height:1.3}
+  .int-tbl th,.int-tbl td{border:1px solid #9fb0c9;padding:5px 6px;text-align:center;vertical-align:middle;word-break:normal;overflow-wrap:break-word;hyphens:none}
+  .int-tbl td.c-nw{white-space:nowrap}
+  body:not(.light) .int-tbl th,body:not(.light) .int-tbl td{border-color:#3d4d68}
+  .int-tbl thead th{background:#D9DEE6;color:#1e293b;font-weight:800;font-size:10.5px;position:sticky;top:0;z-index:2}
+  body:not(.light) .int-tbl thead th{background:#273449;color:#e2e8f0}
+  .int-tbl td{background:var(--panel)}
+  .int-tbl .c-leito{background:#D9DEE6;color:#1e293b;font-weight:900;font-size:11.5px;position:sticky;left:0;z-index:1;min-width:52px}
+  body:not(.light) .int-tbl .c-leito{background:#273449;color:#e2e8f0}
+  .int-tbl thead th.c-leito{z-index:3}
+  .int-tbl .c-nome{font-weight:800;min-width:150px}
+  .int-tbl tr.int-off td{background:#C9CED6;color:#334155;font-weight:800;padding:3px 5px}
+  body:not(.light) .int-tbl tr.int-off td{background:#1b2536;color:#94a3b8}
+  .int-tbl tr.int-vazio td{color:var(--muted)}
+  .int-tbl tr.int-row:hover td:not(.c-leito){background:var(--panel-2)}
+  .int-tbl td.c-acoes{min-width:96px;white-space:nowrap}
+  .int-tbl td.c-acoes .btn{padding:3px 6px;font-size:11px}
+  .int-pbadge{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:var(--amber);color:#1e293b;font-size:10px;font-weight:900;margin-left:2px}
+  .int-pbadge.zero{background:var(--green);color:#04283a}
+  .int-tbl tr.int-det td{background:var(--panel-2);text-align:left;padding:10px 12px}
+  .int-detgrid{display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(220px,1fr);gap:14px;max-width:1100px}
+  @media(max-width:700px){ .int-detgrid{grid-template-columns:1fr} }
+  .int-printhdr{display:none}
+  /* Impressão: só a tabela do censo, paisagem */
+  @media print{
+    body.print-intern > *:not(main){display:none!important}
+    body.print-intern main > *:not(#view-internados){display:none!important}
+    body.print-intern #view-internados > .card > *:not(#internPrintArea){display:none!important}
+    body.print-intern #view-internados > .card{border:none!important;box-shadow:none!important;padding:0!important;background:#fff!important}
+    body.print-intern,body.print-intern main{background:#fff!important;padding:0!important;margin:0!important}
+    body.print-intern .int-tblwrap{overflow:visible;border:none}
+    body.print-intern .int-tbl{min-width:0!important;width:100%;font-size:7px}
+    body.print-intern .int-tbl th,body.print-intern .int-tbl td{min-width:0!important;white-space:normal!important;padding:2px 2px;background:#fff!important;color:#000!important;border-color:#666!important;position:static!important;font-size:7px}
+    body.print-intern .int-tbl thead th,body.print-intern .int-tbl .c-leito,body.print-intern .int-tbl tr.int-off td{background:#ddd!important}
+    body.print-intern .c-acoes,body.print-intern tr.int-det{display:none!important}
+    body.print-intern .int-printhdr{display:block;font:800 11px sans-serif;margin:0 0 6px;color:#000}
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
 </head>
@@ -570,6 +610,7 @@
         <h2>🛏 Pacientes internados</h2>
         <button class="btn primary small" onclick="internNovo()">➕ Adicionar paciente</button>
         <button class="btn small" onclick="gv('internImpFile').click()" title="Importar vários pacientes de um arquivo JSON">📥 Importar lista</button>
+        <button class="btn small" onclick="internImprimir()" title="Imprimir o censo no formato da folha (paisagem)">🖨 Imprimir censo</button>
         <input type="file" id="internImpFile" accept=".json,application/json" style="display:none" onchange="internImportFile(event)">
         <span class="int-sync" id="internSync"><span class="dot"></span><span id="internSyncTxt">—</span></span>
       </div>
@@ -605,7 +646,10 @@
           <span id="intFerr" style="color:var(--red);font-size:12.5px;align-self:center"></span>
         </div>
       </div>
-      <div id="internWrap"></div>
+      <div id="internPrintArea">
+        <div class="int-printhdr" id="internPrintHdr"></div>
+        <div id="internWrap"></div>
+      </div>
       <details id="internAltasBox" style="margin-top:14px" ontoggle="internAltasToggle(this)">
         <summary style="cursor:pointer;font-weight:800;font-size:13px;color:var(--muted)">🏥 Altas recentes (últimas 20)</summary>
         <div id="internAltasWrap" style="margin-top:10px"></div>
@@ -5532,7 +5576,7 @@ function internObsSave(id){
 }
 /* ---- alta ---- */
 var internAltaId=null;
-function internAltaOpen(id){ internAltaId=(internAltaId===id)?null:id; internRender(); }
+function internAltaOpen(id){ internAltaId=(internAltaId===id)?null:id; if(internAltaId) internDetOpen[id]=true; internRender(); }
 function internAltaConfirm(id){
   var r=internData[id]; if(!r) return;
   if(!fbDB){ toast('⚠ Registrar alta exige conexão — o registro vai para o arquivo de altas na nuvem.'); return; }
@@ -5666,88 +5710,135 @@ function internSyncUI(){
   else if(internFrom==='nuvem'){ el.className='int-sync on'; t.textContent='Ao vivo — compartilhado com a equipe'; }
   else { el.className='int-sync'; t.textContent=(internFrom==='local')?'cópia local (offline)':'conectando…'; }
 }
+/* Mapa fixo de leitos = linhas do censo impresso (ordem, acomodação e desativados).
+   Leito ocupado por paciente aparece mesmo que esteja marcado "off". Para ativar/desativar
+   ou incluir leitos, edite esta lista. */
+var INTERN_LEITOS=[
+  {l:'201',a:'CAMA'},{l:'202',a:'CAMA'},{l:'203',a:'BERÇO'},{l:'204',a:'CAMA'},{l:'205',a:'CAMA'},
+  {l:'206A',a:'BERÇO'},{l:'206B',a:'CAMA'},{l:'207A',a:'CAMA'},{l:'207B',a:'CAMA'},
+  {l:'208A',a:'BERÇO',off:true},{l:'208B',a:'CAMA',off:true},{l:'209A',a:'BERÇO',off:true},{l:'209B',a:'BERÇO',off:true},
+  {l:'210A',a:'BERÇO'},{l:'210B',a:'BERÇO'},{l:'211A',a:'BERÇO',off:true},{l:'211B',a:'BERÇO',off:true}
+];
+/* Colunas na MESMA ordem e com os MESMOS títulos da folha do censo. */
+var INTERN_COLS=[
+  ['dataInicio','DATA ADMISSÃO',80,1],['nome','Nome Completo',175],['numAtendimento','Atendimento',86,1],['peso','Peso',48,1],
+  ['dataNasc','Data Nascimento',82,1],['idade','Idade',58],['convenio','Convênio',92],['especialidade','Especialidade',92],
+  ['diagnostico','Diagnóstico',125],['comorbidade','Comorbidade',105],['planoMeta','PLANO E META TERAPÊUTICA',125],
+  ['prevAlta','Data Prevista Alta',66,1],['dieta','JEJUM / DIETA',112],['examesPend','Exames/ Procedimentos Pendentes?',105],
+  ['antibiotico','Antibiótico? Dias e Qual? Febre?',155],['dispositivos','DISPOSITIVOS',78],
+  ['pontoAtencao','Paciente Watcher? PONTO ATENÇÃO',125],['longaPerm','Longa Permanência?',70],
+  ['pendMulti','Pendência equipe Multidisciplinar?',115],['obs','OBSERVAÇÕES (Alergia, Isolamento, complexidade, etc)',195],
+  ['visita','Visita Clínica Sim (S) / Não (N)',66]
+];
+var internDetOpen={};   // linhas de detalhe (pendências/obs/alta) abertas, por id
+function internDetToggle(id){ internDetOpen[id]=!internDetOpen[id]; if(!internDetOpen[id] && internAltaId===id) internAltaId=null; internRender(); }
+function internNovoLeito(leito,acom){
+  internFormOpen(null);
+  gv('intFleito').value=leito||''; gv('intFacom').value=acom||'';
+}
+function internCell(r,c){
+  var v;
+  if(c==='dataInicio') v=r.dataInicio?internFmtDH(r.dataInicio,''):'';
+  else if(c==='idade') return escAttr(r.idade||'')+(r.acomodacao?('<br>'+escAttr(r.acomodacao)):'');
+  else if(c==='diagnostico') v=r.diagnostico||((r.cid||'')+(r.nomeCid?(' '+r.nomeCid):''));
+  else v=r[c];
+  return escAttr(v||'');
+}
+function internDetalhe(id,r){
+  var pend=r.pendencias||{};
+  var pids=Object.keys(pend).sort(function(a,b){ return (pend[a].em||0)-(pend[b].em||0); });
+  var abertas=pids.filter(function(p){ return !pend[p].feito; }).length;
+  var h='<div class="int-detgrid"><div>';
+  h+='<div class="int-secttl">Pendências do plantão'+(pids.length?(' — '+abertas+' aberta(s) de '+pids.length):'')+'</div>';
+  h+='<ul class="int-pend" style="margin:6px 0">';
+  if(!pids.length) h+='<li style="border-style:dashed;color:var(--muted)">Sem pendências registradas.</li>';
+  pids.forEach(function(pid){
+    var p=pend[pid];
+    h+='<li class="'+(p.feito?'done':'')+'">'
+      +'<input type="checkbox" '+(p.feito?'checked':'')+' onchange="internPendToggle(\''+id+'\',\''+pid+'\',this.checked)" title="Marcar como feita">'
+      +'<span class="t">'+escAttr(p.txt||'')
+      +'<span class="meta">'+escAttr(p.por||'—')+' · '+internFmtTs(p.em)
+      +(p.feito?(' &nbsp;→&nbsp; ✔ '+escAttr(p.feitoPor||'—')+' · '+internFmtTs(p.feitoEm)):'')
+      +'</span></span>'
+      +'<span class="px" onclick="internPendDel(\''+id+'\',\''+pid+'\')" title="Excluir pendência">✕</span>'
+      +'</li>';
+  });
+  h+='</ul>';
+  h+='<div class="int-addrow"><input id="intPendTxt_'+id+'" type="text" placeholder="Nova pendência (ex.: colher hemocultura 18h)" onkeydown="internPendKey(event,\''+id+'\')"><button class="btn small" onclick="internPendAdd(\''+id+'\')">➕</button></div>';
+  h+='</div><div>';
+  h+='<div class="int-secttl">Observações (coluna OBSERVAÇÕES do censo)</div>';
+  h+='<div style="display:flex;gap:6px;align-items:flex-start;margin-top:6px"><textarea id="intObs_'+id+'" rows="3" style="flex:1 1 auto;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font:inherit;font-size:13px" placeholder="Alergia, isolamento, complexidade…">'+escAttr(r.obs||'')+'</textarea><button class="btn small" onclick="internObsSave(\''+id+'\')" title="Salvar observações">💾</button></div>';
+  h+='<div class="int-upd" style="margin-top:6px">'+(r.atualizadoPor?('Atualizado por '+escAttr(r.atualizadoPor)+' · '+internFmtTs(r.atualizadoEm)):'')+'</div>';
+  h+='</div></div>';
+  if(internAltaId===id){
+    var hj=new Date();
+    h+='<div class="int-alta" style="margin-top:10px">'
+      +'<label>Tipo de alta<select id="intAltaTipo_'+id+'">'+INTERN_ALTAS.map(function(x){ return '<option>'+x+'</option>'; }).join('')+'</select></label>'
+      +'<label>Detalhe (opcional)<input id="intAltaNome_'+id+'" type="text" placeholder="ex.: p/ UPA Centro"></label>'
+      +'<label>Data<input id="intAltaData_'+id+'" type="date" value="'+hj.getFullYear()+'-'+pad(hj.getMonth()+1)+'-'+pad(hj.getDate())+'"></label>'
+      +'<label>Hora<input id="intAltaHora_'+id+'" type="time" value="'+pad(hj.getHours())+':'+pad(hj.getMinutes())+'"></label>'
+      +'<button class="btn small primary" onclick="internAltaConfirm(\''+id+'\')">✔ Confirmar alta</button>'
+      +'<button class="btn small ghost" onclick="internAltaOpen(\''+id+'\')">Cancelar</button>'
+      +'</div>';
+  }
+  return h;
+}
 function internRender(){
   var w=gv('internWrap'); if(!w) return;
   internSyncUI();
-  var ids=Object.keys(internData||{});
-  if(!ids.length){
-    w.innerHTML='<div class="int-empty">Nenhum paciente no quadro.'+(internFbErr?('<br><span style="color:var(--red)">⚠ '+escAttr(internFbErr)+' — a regra do nó "internados" foi publicada no Firebase?</span>'):' Clique em <b>➕ Adicionar paciente</b> para começar a passagem.')+'</div>';
-    return;
-  }
-  // ordena por leito (numérico quando possível), depois nº de atendimento
-  ids.sort(function(a,b){
-    var ra=internData[a], rb=internData[b];
-    var la=parseInt(ra.leito,10), lb=parseInt(rb.leito,10);
-    if(!isNaN(la)&&!isNaN(lb)&&la!==lb) return la-lb;
-    var sa=(ra.leito||'￿'), sb=(rb.leito||'￿');
-    if(sa!==sb) return sa<sb?-1:1;
-    return String(ra.numAtendimento||'')<String(rb.numAtendimento||'')?-1:1;
-  });
-  var h='<div class="int-grid">';
-  ids.forEach(function(id){
+  var ph=gv('internPrintHdr'); if(ph){ var d=new Date(); ph.textContent='CENSO — ENFERMARIA DE PEDIATRIA · HOSPITAL PAULO SACRAMENTO — '+pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
+  // agrupa pacientes por leito
+  var porLeito={}, ids=Object.keys(internData||{});
+  ids.forEach(function(id){ var l=String(internData[id].leito||'').trim().toUpperCase(); (porLeito[l]=porLeito[l]||[]).push(id); });
+  var conhecidos={};
+  var NCOL=INTERN_COLS.length+2; // leito + colunas + ações
+  var h='';
+  if(internFbErr) h+='<div class="int-empty" style="margin-bottom:10px;color:var(--red)">⚠ '+escAttr(internFbErr)+' — a regra do nó "internados" foi publicada no Firebase?</div>';
+  h+='<div class="int-tblwrap"><table class="int-tbl"><thead><tr><th class="c-leito"></th>';
+  INTERN_COLS.forEach(function(c){ h+='<th style="min-width:'+c[2]+'px">'+escAttr(c[1])+'</th>'; });
+  h+='<th class="c-acoes">Ações</th></tr></thead><tbody>';
+  function linhaPaciente(leitoLbl,id){
     var r=internData[id]||{};
-    var pend=r.pendencias||{};
-    var pids=Object.keys(pend).sort(function(a,b){ return (pend[a].em||0)-(pend[b].em||0); });
-    var abertas=pids.filter(function(p){ return !pend[p].feito; }).length;
-    var diaN=internDiaN(r);
-    h+='<div class="int-card'+(abertas?'':' semPend')+'">';
-    h+='<div class="int-head"><span class="int-leito">🛏 '+(r.leito?('Leito '+escAttr(r.leito)):'Sem leito')+(r.nome?(' · '+escAttr(r.nome)):'')+'</span>'
-      +'<span class="int-meta">'+escAttr(r.idade||'—')+(r.peso?(' · '+escAttr(r.peso)):'')+(r.acomodacao?(' · '+escAttr(r.acomodacao)):'')+(diaN?(' · '+diaN+'º dia'):'')+'</span></div>';
-    h+='<div class="int-line"><span class="int-meta">Atend. '+escAttr(r.numAtendimento||'—')
-      +(r.dataNasc?(' · Nasc. '+escAttr(r.dataNasc)):'')
-      +' · Admissão '+internFmtDH(r.dataInicio,r.horaInicio)
-      +(r.convenio?(' · '+escAttr(r.convenio)):'')
-      +(r.especialidade?(' · '+escAttr(r.especialidade)):'')+'</span></div>';
-    h+='<div class="int-line"><b>'+escAttr(r.diagnostico||((r.cid||'')+(r.nomeCid?(' — '+r.nomeCid):''))||'—')+'</b>'
-      +((r.comorbidade)?('<br><span class="int-meta">Comorbidade: '+escAttr(r.comorbidade)+'</span>'):'')+'</div>';
-    if(r.planoMeta||r.prevAlta) h+='<div class="int-line">🎯 <b>Plano:</b> '+escAttr(r.planoMeta||'—')+(r.prevAlta?(' · <b>Prev. alta:</b> '+escAttr(r.prevAlta)):'')+'</div>';
-    if(r.dieta) h+='<div class="int-line">🍽 <b>Dieta:</b> '+escAttr(r.dieta)+'</div>';
-    if(r.antibiotico) h+='<div class="int-line">💊 <b>ATB:</b> '+escAttr(r.antibiotico)+'</div>';
-    if(r.examesPend) h+='<div class="int-line">🧪 <b>Exames/proced.:</b> '+escAttr(r.examesPend)+'</div>';
-    if(r.dispositivos) h+='<div class="int-line">🔌 <b>Dispositivos:</b> '+escAttr(r.dispositivos)+'</div>';
-    if(r.pontoAtencao) h+='<div class="int-line">⚠️ <b>Ponto de atenção:</b> '+escAttr(r.pontoAtencao)+'</div>';
-    if(r.pendMulti||r.longaPerm||r.visita) h+='<div class="int-line">👥 <b>Equipe multi:</b> '+escAttr(r.pendMulti||'—')
-      +(r.longaPerm?(' · Longa perm.: '+escAttr(r.longaPerm)):'')
-      +(r.visita?(' · Visita clínica: '+escAttr(r.visita)):'')+'</div>';
-    if(r.anamnese) h+='<details class="int-resumo"'+(String(r.anamnese).length<=120?' open':'')+'><summary>📋 Resumo</summary>'+escAttr(r.anamnese)+'</details>';
-    h+='<div class="int-secttl">Pendências'+(pids.length?(' — '+abertas+' aberta(s) de '+pids.length):'')+'</div>';
-    h+='<ul class="int-pend">';
-    if(!pids.length) h+='<li style="border-style:dashed;color:var(--muted)">Sem pendências registradas.</li>';
-    pids.forEach(function(pid){
-      var p=pend[pid];
-      h+='<li class="'+(p.feito?'done':'')+'">'
-        +'<input type="checkbox" '+(p.feito?'checked':'')+' onchange="internPendToggle(\''+id+'\',\''+pid+'\',this.checked)" title="Marcar como feita">'
-        +'<span class="t">'+escAttr(p.txt||'')
-        +'<span class="meta">'+escAttr(p.por||'—')+' · '+internFmtTs(p.em)
-        +(p.feito?(' &nbsp;→&nbsp; ✔ '+escAttr(p.feitoPor||'—')+' · '+internFmtTs(p.feitoEm)):'')
-        +'</span></span>'
-        +'<span class="px" onclick="internPendDel(\''+id+'\',\''+pid+'\')" title="Excluir pendência">✕</span>'
-        +'</li>';
-    });
-    h+='</ul>';
-    h+='<div class="int-addrow"><input id="intPendTxt_'+id+'" type="text" placeholder="Nova pendência (ex.: colher hemocultura 18h)" onkeydown="internPendKey(event,\''+id+'\')"><button class="btn small" onclick="internPendAdd(\''+id+'\')">➕</button></div>';
-    h+='<div class="int-secttl">Observações da passagem</div>';
-    h+='<div style="display:flex;gap:6px;align-items:flex-start"><textarea id="intObs_'+id+'" rows="2" style="flex:1 1 auto;min-width:0" placeholder="Texto livre (dieta, acesso, previsão de alta…)">'+escAttr(r.obs||'')+'</textarea><button class="btn small" onclick="internObsSave(\''+id+'\')" title="Salvar observações">💾</button></div>';
-    if(internAltaId===id){
-      var hj=new Date();
-      h+='<div class="int-alta">'
-        +'<label>Tipo de alta<select id="intAltaTipo_'+id+'">'+INTERN_ALTAS.map(function(x){ return '<option>'+x+'</option>'; }).join('')+'</select></label>'
-        +'<label>Detalhe (opcional)<input id="intAltaNome_'+id+'" type="text" placeholder="ex.: p/ UPA Centro"></label>'
-        +'<label>Data<input id="intAltaData_'+id+'" type="date" value="'+hj.getFullYear()+'-'+pad(hj.getMonth()+1)+'-'+pad(hj.getDate())+'"></label>'
-        +'<label>Hora<input id="intAltaHora_'+id+'" type="time" value="'+pad(hj.getHours())+':'+pad(hj.getMinutes())+'"></label>'
-        +'<button class="btn small primary" onclick="internAltaConfirm(\''+id+'\')">✔ Confirmar alta</button>'
-        +'<button class="btn small ghost" onclick="internAltaOpen(\''+id+'\')">Cancelar</button>'
-        +'</div>';
+    var pend=r.pendencias||{}, ab=Object.keys(pend).filter(function(p){ return !pend[p].feito; }).length;
+    var s='<tr class="int-row"><td class="c-leito">'+escAttr(leitoLbl||r.leito||'—')+'</td>';
+    INTERN_COLS.forEach(function(c){ s+='<td class="'+(c[0]==='nome'?'c-nome':'')+(c[3]?' c-nw':'')+'">'+internCell(r,c[0])+'</td>'; });
+    s+='<td class="c-acoes">'
+      +'<button class="btn small" onclick="internDetToggle(\''+id+'\')" title="Pendências do plantão e observações">📋<span class="int-pbadge'+(ab?'':' zero')+'">'+ab+'</span></button> '
+      +'<button class="btn small" onclick="internEditar(\''+id+'\')" title="Editar linha">✏️</button> '
+      +'<button class="btn small" style="color:var(--amber);border-color:var(--amber)" onclick="internAltaOpen(\''+id+'\')" title="Dar alta">🏥</button>'
+      +'</td></tr>';
+    if(internDetOpen[id] || internAltaId===id) s+='<tr class="int-det"><td class="c-leito"></td><td colspan="'+(NCOL-1)+'">'+internDetalhe(id,r)+'</td></tr>';
+    return s;
+  }
+  INTERN_LEITOS.forEach(function(L){
+    var key=L.l.toUpperCase(); conhecidos[key]=true;
+    var lista=porLeito[key]||[];
+    if(lista.length){ lista.forEach(function(id){ h+=linhaPaciente(L.l,id); }); return; }
+    if(L.off){
+      h+='<tr class="int-off"><td class="c-leito">'+escAttr(L.l)+'</td><td></td><td>DESATIVADO</td>';
+      for(var i=2;i<INTERN_COLS.length;i++) h+='<td>'+(INTERN_COLS[i][0]==='idade'?escAttr(L.a):'')+'</td>';
+      h+='<td class="c-acoes"></td></tr>';
+      return;
     }
-    h+='<div class="int-foot">'
-      +'<span class="int-upd">'+(r.atualizadoPor?('Atualizado por '+escAttr(r.atualizadoPor)+' · '+internFmtTs(r.atualizadoEm)):'')+'</span>'
-      +'<span style="display:flex;gap:6px"><button class="btn small" onclick="internEditar(\''+id+'\')">✏️ Editar</button>'
-      +'<button class="btn small" style="color:var(--amber);border-color:var(--amber)" onclick="internAltaOpen(\''+id+'\')">🏥 Alta</button></span>'
-      +'</div>';
-    h+='</div>';
+    h+='<tr class="int-vazio"><td class="c-leito">'+escAttr(L.l)+'</td>';
+    INTERN_COLS.forEach(function(c){ h+='<td>'+(c[0]==='idade'?escAttr(L.a):'')+'</td>'; });
+    h+='<td class="c-acoes"><button class="btn small" onclick="internNovoLeito(\''+L.l+'\',\''+L.a+'\')" title="Internar paciente neste leito">➕ Internar</button></td></tr>';
   });
-  h+='</div>';
+  // pacientes em leitos fora do mapa (ou sem leito) entram no fim
+  Object.keys(porLeito).filter(function(k){ return !conhecidos[k]; }).sort().forEach(function(k){
+    porLeito[k].forEach(function(id){ h+=linhaPaciente(k||'—',id); });
+  });
+  h+='</tbody></table></div>';
   w.innerHTML=h;
+}
+function internImprimir(){
+  internRender();
+  var st=document.createElement('style'); st.id='internPageCss'; st.textContent='@page{size:landscape;margin:8mm}';
+  document.head.appendChild(st);
+  document.body.classList.add('print-intern');
+  var limpar=function(){ document.body.classList.remove('print-intern'); var s=gv('internPageCss'); if(s) s.remove(); window.removeEventListener('afterprint',limpar); };
+  window.addEventListener('afterprint',limpar);
+  window.print();   // a limpeza roda no evento afterprint (não usar timer: no Safari o diálogo não bloqueia)
 }
 
 /* ===== Cabeçalho auto-oculto no scroll (só telas <=768px) =====
