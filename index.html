@@ -528,6 +528,16 @@
   .int-detgrid{display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(220px,1fr);gap:14px;max-width:1100px}
   @media(max-width:700px){ .int-detgrid{grid-template-columns:1fr} }
   .int-printhdr{display:none}
+  .int-detgrid{grid-template-columns:1fr!important;max-width:none}
+  .int-passgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
+  .int-detbox{position:sticky;left:0;width:calc(var(--intvis,1000px) - 26px);max-width:1250px;box-sizing:border-box}
+  .int-detttl{font-weight:900;font-size:13px;margin:0 0 8px}
+  .int-tbl tr.int-det td{padding:10px 10px}
+  .int-pass{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px}
+  .int-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .int-chip{border:1px solid var(--border);background:var(--panel-2);color:var(--text);border-radius:14px;padding:3px 9px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;line-height:1.3}
+  .int-chip:hover:not([disabled]){border-color:var(--accent);color:var(--accent)}
+  .int-chip.on{background:var(--accent);border-color:var(--accent);color:#04283a;cursor:default;opacity:.85}
   /* Impressão: só a tabela do censo, paisagem */
   @media print{
     body.print-intern > *:not(main){display:none!important}
@@ -609,9 +619,9 @@
       <div class="int-top">
         <h2>🛏 Pacientes internados</h2>
         <button class="btn primary small" onclick="internNovo()">➕ Adicionar paciente</button>
-        <button class="btn small" onclick="gv('internImpFile').click()" title="Importar vários pacientes de um arquivo JSON">📥 Importar lista</button>
+        <button class="btn small" onclick="gv('internImpFile').click()" title="Importar a lista do censo: Word, Excel, PDF, foto (JPG/PNG) ou JSON">📥 Importar lista</button>
         <button class="btn small" onclick="internImprimir()" title="Imprimir o censo no formato da folha (paisagem)">🖨 Imprimir censo</button>
-        <input type="file" id="internImpFile" accept=".json,application/json" style="display:none" onchange="internImportFile(event)">
+        <input type="file" id="internImpFile" accept=".docx,.xlsx,.csv,.pdf,.jpg,.jpeg,.png,.json,image/jpeg,image/png,application/pdf" style="display:none" onchange="internImpFile(event)">
         <span class="int-sync" id="internSync"><span class="dot"></span><span id="internSyncTxt">—</span></span>
       </div>
       <div id="internFormCard" style="display:none;border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:var(--panel-2)">
@@ -5539,17 +5549,37 @@ function internSalvar(){
   toast(ehEdicao? 'Paciente atualizado.' : 'Paciente adicionado ao quadro.');
 }
 /* ---- pendências ---- */
-function internPendAdd(id){
-  var inp=gv('intPendTxt_'+id); if(!inp) return;
-  var t=(inp.value||'').trim(); if(!t){ inp.focus(); return; }
-  var r=internData[id]; if(!r) return;
+/* Passagem de plantão: itens por categoria. Cada item = {txt, cat, feito, por, em, feitoPor, feitoEm}.
+   Itens antigos sem `cat` contam como 'pend'. Opções prontas (checklist) + texto livre por categoria. */
+var INTERN_PASS=[
+  { cat:'pend', tit:'📌 Pendências', ph:'Escrever pendência (ex.: colher hemocultura 18h)',
+    opts:['Coletar exames','Checar resultado de exames','Aguardar exame de imagem','Culturas pendentes','Aguardar parecer / interconsulta','Autorização do convênio','Aguardar vaga / transferência','Pendência com família / serviço social'] },
+  { cat:'aval', tit:'🩺 O que avaliar', ph:'Escrever o que reavaliar (ex.: FR após inalação)',
+    opts:['Padrão respiratório / desconforto','Saturação / desmame de O₂','Curva térmica / febre','Hidratação / aceitação da dieta','Diurese / balanço hídrico','Dor','Perfusão / sinais de sepse','Acesso venoso','Ferida operatória / curativo','Controle de peso'] },
+  { cat:'alta', tit:'🏠 Programação de alta', ph:'Escrever programação (ex.: alta após 7º dia de ATB)',
+    opts:['Alta prevista hoje','Alta prevista amanhã','Alta após término do ATB','Transição para medicação VO','Aguardar melhora clínica','Aguardar resultado de exame','Orientações / receita de alta','Sem previsão de alta'] }
+];
+function internItemAdd(id,cat,txt){
+  var r=internData[id]; if(!r) return false;
   r.pendencias=r.pendencias||{};
+  for(var k in r.pendencias){ var q=r.pendencias[k]; if(!q.feito && (q.cat||'pend')===cat && String(q.txt||'').trim().toLowerCase()===txt.toLowerCase()){ toast('Esse item já está aberto.'); return false; } }
   var pid='q'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-  r.pendencias[pid]={ txt:t, feito:false, por:currentUser||'', em:Date.now() };
+  r.pendencias[pid]={ txt:txt, cat:cat, feito:false, por:currentUser||'', em:Date.now() };
   internStamp(r);
   internPush(id);
+  return true;
 }
-function internPendKey(ev,id){ if(ev.key==='Enter'){ ev.preventDefault(); internPendAdd(id); } }
+function internPendAdd(id,cat){
+  cat=cat||'pend';
+  var inp=gv('intPendTxt_'+id+'_'+cat); if(!inp) return;
+  var t=(inp.value||'').trim(); if(!t){ inp.focus(); return; }
+  internItemAdd(id,cat,t);
+}
+function internPassChip(id,cat,idx){
+  var g=INTERN_PASS.filter(function(x){ return x.cat===cat; })[0]; if(!g||!g.opts[idx]) return;
+  internItemAdd(id,cat,g.opts[idx]);
+}
+function internPendKey(ev,id,cat){ if(ev.key==='Enter'){ ev.preventDefault(); internPendAdd(id,cat); } }
 function internPendToggle(id,pid,chk){
   var r=internData[id]; if(!r||!r.pendencias||!r.pendencias[pid]) return;
   var p=r.pendencias[pid];
@@ -5637,52 +5667,527 @@ function internAltasLoad(){
   });
 }
 var internAltasCache={};
-/* ---- importação em lote (JSON) ----
-   Arquivo: array de objetos com os campos do cartão (numAtendimento obrigatório).
-   Só ADICIONA: atendimento já presente no quadro é pulado (nunca sobrescreve). */
+/* ══════════════════ IMPORTAR LISTA DE INTERNADOS (23/10/2026) ══════════════════
+   Formatos: JSON · Word .docx · Excel .xlsx · CSV · PDF com texto · PDF escaneado / imagem JPG-PNG (OCR,
+   mesmo motor Tesseract do extrator de ponto).
+   Fluxo: arquivo → linhas do censo → PRÉVIA (conferir/corrigir leito, nome e atendimento; escolher
+   "Acrescentar" ou "Substituir todos") → grava com UM update multi-caminho em `internados`.
+   Paciente que já está no quadro (mesmo nº de atendimento, ou mesmo nome) NÃO é duplicado: só leito e
+   acomodação mudam (e o nº de atendimento provisório "CONFERIR-…" é corrigido) — pendências da passagem
+   e observações são preservadas. No modo Substituir, quem não está na lista sai do quadro e vai para
+   "Altas recentes" (com as pendências guardadas; volta com ↩ Reinternar). */
 var INTERN_CAMPOS=['numAtendimento','leito','nome','dataInicio','peso','dataNasc','idade','acomodacao','convenio','especialidade','diagnostico','comorbidade','planoMeta','prevAlta','dieta','examesPend','antibiotico','dispositivos','pontoAtencao','longaPerm','visita','pendMulti','obs','anamnese'];
-function internImportFile(ev){
-  var f=ev.target && ev.target.files && ev.target.files[0];
-  ev.target.value='';
+/* Palavras-chave dos títulos das colunas do censo (sem acento, maiúsculas). A ORDEM importa: a 1ª que casar vence. */
+var INTERN_HDR=[
+  ['numAtendimento',['ATENDIMENTO']],['dataInicio',['ADMISSAO','ADMISS']],['dataNasc',['NASCIMENTO']],
+  ['nome',['NOME','COMPLETO']],['peso',['PESO']],['convenio',['CONVENIO']],
+  ['especialidade',['ESPECIALIDADE']],['diagnostico',['DIAGNOSTICO']],['comorbidade',['COMORBIDADE']],
+  ['planoMeta',['PLANO','TERAPEUTICA']],['prevAlta',['PREVISTA']],['dieta',['JEJUM']],
+  ['examesPend',['PROCEDIMENTOS','EXAMES']],['antibiotico',['ANTIBIOTICO']],['dispositivos',['DISPOSITIVOS']],
+  ['pontoAtencao',['WATCHER','ATENCAO']],['longaPerm',['LONGA','PERMANENCIA']],['pendMulti',['MULTIDISCIPLINAR']],
+  ['obs',['OBSERVACOES','OBSERVACAO']],['visita',['VISITA']],['leito',['LEITO']],
+  ['idade',['IDADE']]   /* por ÚLTIMO: "comorbIDADE", "especialIDADE" e "complexIDADE" contêm "IDADE" */
+];
+function internNorm(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase(); }
+function internLev(a,b){
+  if(a===b) return 0; var m=a.length, n=b.length; if(!m) return n; if(!n) return m;
+  var prev=new Array(n+1), cur=new Array(n+1), i, j;
+  for(j=0;j<=n;j++) prev[j]=j;
+  for(i=1;i<=m;i++){ cur[0]=i; for(j=1;j<=n;j++){ cur[j]=Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a.charCodeAt(i-1)===b.charCodeAt(j-1)?0:1)); } var t=prev; prev=cur; cur=t; }
+  return prev[n];
+}
+function internKwHit(text,kw){
+  var w=internNorm(text).replace(/[^A-Z]/g,''); if(!w) return false;
+  if(w.indexOf(kw)>=0) return true;
+  if(kw.length>=6 && w.length>=kw.length-2){              // tolerância a erro de OCR (1 letra a cada 5)
+    var tol=Math.floor(kw.length/5);
+    if(internLev(w,kw)<=tol || internLev(w.slice(0,kw.length),kw)<=tol) return true;
+  }
+  return false;
+}
+function internHdrKey(text){
+  for(var i=0;i<INTERN_HDR.length;i++){ var k=INTERN_HDR[i]; for(var j=0;j<k[1].length;j++){ if(internKwHit(text,k[1][j])) return k[0]; } }
+  return null;
+}
+function internAtdKey(s){ var d=String(s==null?'':s).replace(/[Oo]/g,'0').replace(/\D/g,''); return d.length>=5?d:''; }
+function internNomeKey(s){ return internNorm(s).replace(/\([^)]*\)/g,' ').replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim(); }
+function internLeitoKey(s){ return internNorm(s).replace(/\s+/g,''); }
+function internExcelData(v){                       // número de série do Excel → dd/mm/aaaa
+  var n=+v; if(!isFinite(n) || n<20000 || n>80000) return null;
+  var d=new Date(Math.round((n-25569)*86400000)); return pad(d.getUTCDate())+'/'+pad(d.getUTCMonth()+1)+'/'+d.getUTCFullYear();
+}
+/* Limpa uma linha bruta do censo. Devolve null para linha vazia ou DESATIVADO. */
+function internRowClean(raw){
+  var r={};
+  INTERN_CAMPOS.forEach(function(c){ if(raw[c]!=null && String(raw[c]).trim()!=='') r[c]=String(raw[c]).replace(/\s+/g,' ').trim(); });
+  if(r.leito) r.leito=internLeitoKey(r.leito);
+  if(/DESATIVAD/.test(internNorm(r.nome))) return null;
+  if(!r.nome && !internAtdKey(r.numAtendimento)) return null;
+  ['dataInicio','dataNasc'].forEach(function(c){ var x=internExcelData(r[c]); if(x) r[c]=x; });
+  if(r.dataInicio){                                // dd/mm/aa(aa) → aaaa-mm-dd (campo de data do formulário)
+    var m=r.dataInicio.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/);
+    if(m){ var y=+m[3]; if(y<100) y+=2000; r.dataInicio=y+'-'+pad(+m[2])+'-'+pad(+m[1]); }
+  }
+  if(r.idade && !r.acomodacao){                     // no censo a coluna Idade traz "2A BERÇO"
+    var n=internNorm(r.idade);
+    if(/BERCO/.test(n)){ r.acomodacao='BERÇO'; r.idade=r.idade.replace(/BER[ÇC]O/i,'').trim(); }
+    else if(/CAMA/.test(n)){ r.acomodacao='CAMA'; r.idade=r.idade.replace(/CAMA/i,'').trim(); }
+  }
+  var a=internAtdKey(r.numAtendimento); if(a && /^[\dOo\s.\-]+$/.test(r.numAtendimento)) r.numAtendimento=a;
+  return r;
+}
+/* ---------- tabela a partir de CÉLULAS (Word, Excel, CSV) ---------- */
+function internRowsFromGrid(grid){
+  var best=-1, bestScore=0, maps=null;
+  for(var i=0;i<Math.min(grid.length,15);i++){
+    var seen={}, n=0, map=[];
+    (grid[i]||[]).forEach(function(cell,j){ var k=internHdrKey(cell); map[j]=k; if(k && !seen[k]){ seen[k]=1; n++; } });
+    if(n>bestScore){ bestScore=n; best=i; maps=map; }
+  }
+  if(bestScore<4) return { rows:[], score:bestScore };
+  if(maps.indexOf('leito')<0){                      // coluna do leito: 1ª coluna sem título
+    for(var c=0;c<maps.length;c++){ if(!maps[c] && !String(grid[best][c]||'').trim()){ maps[c]='leito'; break; } }
+  }
+  var rows=[];
+  for(var r=best+1;r<grid.length;r++){
+    var o={}; (grid[r]||[]).forEach(function(v,j){ var k=maps[j]; if(k && v!=null && String(v).trim()!==''){ o[k]=o[k]?(o[k]+' '+v):String(v); } });
+    var cl=internRowClean(o); if(cl) rows.push(cl);
+  }
+  return { rows:rows, score:bestScore };
+}
+/* ---------- tabela a partir de PALAVRAS POSICIONADAS (PDF com texto, OCR) ----------
+   Colunas: âncoras = palavras do cabeçalho (centro x de cada título). Linhas: âncoras = rótulos do
+   leito (ex.: 206A) na 1ª coluna; a fronteira entre duas linhas é o maior vão vertical sem texto entre
+   elas (aguenta linhas de alturas diferentes). */
+function internMedian(a){ if(!a.length) return 0; var s=a.slice().sort(function(x,y){ return x-y; }); return s[Math.floor(s.length/2)]; }
+function internMaiorVao(words,lo,hi){
+  var iv=words.map(function(w){ return [Math.max(lo,w.y0), Math.min(hi,w.y1)]; }).filter(function(v){ return v[1]>v[0]; }).sort(function(a,b){ return a[0]-b[0]; });
+  var cur=lo, best=0, at=(lo+hi)/2;
+  iv.forEach(function(v){ if(v[0]>cur && v[0]-cur>best){ best=v[0]-cur; at=(cur+v[0])/2; } cur=Math.max(cur,v[1]); });
+  if(hi>cur && hi-cur>best){ at=(cur+hi)/2; }
+  return at;
+}
+function internLabelOf(w){                          // "206A", "2O6" → "206", null se não for rótulo de leito
+  var raw=String(w.t||'').trim(); if(/[\/:.,]/.test(raw)) return null;   // pedaço de data/hora, não é leito
+  var t=raw.toUpperCase().replace(/[^0-9A-Z]/g,'');
+  var m=t.replace(/^([0-9OIL]{2,4})/,function(s){ return s.replace(/O/g,'0').replace(/[IL]/g,'1'); }).match(/^(\d{2,4})([A-Z])?$/);
+  return m?{ n:m[1], s:m[2]||'' }:null;
+}
+function internRowsFromWords(words){
+  words=(words||[]).filter(function(w){ return w && String(w.t||'').trim() && w.x1>w.x0 && w.y1>w.y0; });
+  var out={ rows:[], anchors:0, labels:0, conf:null };
+  if(!words.length) return out;
+  function yc(w){ return (w.y0+w.y1)/2; } function xc(w){ return (w.x0+w.x1)/2; }
+  var hMed=internMedian(words.map(function(w){ return w.y1-w.y0; }))||10;
+  // 1) altura do cabeçalho: palavras-título inteiras (as mais distintivas)
+  var hits=[];
+  words.forEach(function(w){ var k=internHdrKey(w.t); if(k) hits.push({ k:k, w:w }); });
+  if(!hits.length) return out;
+  var DIST={numAtendimento:1,dataNasc:1,especialidade:1,comorbidade:1,dispositivos:1,obs:1,diagnostico:1,antibiotico:1,pendMulti:1,dataInicio:1};
+  var hd=hits.filter(function(h){ return DIST[h.k]; });
+  var hy=internMedian((hd.length?hd:hits).map(function(h){ return yc(h.w); }));
+  var near=hits.filter(function(h){ return Math.abs(yc(h.w)-hy)<=4*hMed; });
+  if(!near.length) return out;
+  var minHitX=Math.min.apply(null,near.map(function(h){ return h.w.x0; }));
+  // 2) rótulos de leito: à esquerda de todos os títulos, abaixo do cabeçalho (junta "206" + "B")
+  var labs=[];
+  words.forEach(function(w){
+    if(yc(w)<=hy+hMed || xc(w)>=minHitX) return;
+    var L=internLabelOf(w); if(!L) return;
+    var lbl=L.n+L.s;
+    if(!L.s){
+      var nx=words.filter(function(o){ return o!==w && Math.abs(yc(o)-yc(w))<0.6*hMed && o.x0>=w.x1-2 && o.x0-w.x1<2.5*hMed && /^[A-Z]$/i.test(String(o.t).trim()); })[0];
+      if(nx) lbl+=String(nx.t).trim().toUpperCase();
+    }
+    if(!labs.some(function(l){ return Math.abs(l.y-yc(w))<0.8*hMed; })) labs.push({ l:lbl, y:yc(w) });
+  });
+  labs.sort(function(a,b){ return a.y-b.y; });
+  // 3) faixa do cabeçalho: do maior vão acima dele até o maior vão antes da 1ª linha de dados
+  var top=internMaiorVao(words,hy-8*hMed,hy);
+  var bot=labs.length?internMaiorVao(words,hy,labs[0].y):hy+2.5*hMed;
+  var hw=words.filter(function(w){ return yc(w)>top && yc(w)<bot && xc(w)>=minHitX-0.5*hMed; }).sort(function(a,b){ return a.x0-b.x0; });
+  // 4) colunas: agrupa os fragmentos do título por sobreposição horizontal e lê o título inteiro
+  var grupos=[], g=null;
+  hw.forEach(function(w){ if(g && w.x0<=g.x1+0.3*hMed){ g.ws.push(w); g.x1=Math.max(g.x1,w.x1); } else { g={ x0:w.x0, x1:w.x1, ws:[w] }; grupos.push(g); } });
+  var cols=[], usadas={};
+  grupos.forEach(function(gr){
+    var txt=gr.ws.slice().sort(function(a,b){ var d=yc(a)-yc(b); return Math.abs(d)>0.5*hMed?d:a.x0-b.x0; }).map(function(w){ return w.t; }).join(' ');
+    var k=internHdrKey(txt); if(!k || usadas[k]) return;
+    usadas[k]=1; cols.push({ k:k, x:(gr.x0+gr.x1)/2 });
+  });
+  cols.sort(function(a,b){ return a.x-b.x; });
+  out.anchors=cols.length;
+  if(cols.length<4) return out;
+  var temLeito=!!usadas.leito;
+  var leftEdge=cols[0].x-(cols[1].x-cols[0].x)/2;
+  function colOf(x){
+    if(!temLeito && x<leftEdge) return 'leito';
+    for(var i=0;i<cols.length-1;i++){ if(x<(cols[i].x+cols[i+1].x)/2) return cols[i].k; }
+    return cols[cols.length-1].k;
+  }
+  var dados=words.filter(function(w){ return yc(w)>bot; });
+  if(!temLeito) labs=labs.filter(function(l){            // confirma o rótulo na coluna do leito (agora com as colunas exatas)
+    return dados.some(function(w){ return Math.abs(yc(w)-l.y)<0.5*hMed && colOf(xc(w))==='leito' && internLabelOf(w); }); });
+  if(temLeito){                                      // há coluna "LEITO" com título: rótulos dentro dela
+    labs=[];
+    dados.forEach(function(w){ if(colOf(xc(w))!=='leito') return; var L=internLabelOf(w); if(L && !labs.some(function(l){ return Math.abs(l.y-yc(w))<0.8*hMed; })) labs.push({ l:L.n+L.s, y:yc(w) }); });
+    labs.sort(function(a,b){ return a.y-b.y; });
+  }
+  if(!labs.length && usadas.numAtendimento){          // sem coluna de leito: uma linha por nº de atendimento
+    dados.forEach(function(w){ if(colOf(xc(w))==='numAtendimento' && internAtdKey(w.t).length>=6 && !labs.some(function(l){ return Math.abs(l.y-yc(w))<0.8*hMed; })) labs.push({ l:'', y:yc(w) }); });
+    labs.sort(function(a,b){ return a.y-b.y; });
+  }
+  out.labels=labs.length;
+  if(!labs.length) return out;
+  // 5) linhas: fronteira = maior vão vertical entre dois rótulos (aguenta linhas de alturas diferentes)
+  var bnd=[bot];
+  for(var i=1;i<labs.length;i++) bnd.push(internMaiorVao(dados,labs[i-1].y,labs[i].y));
+  var last=labs[labs.length-1].y; bnd.push(last+(last-bnd[bnd.length-1]));
+  var confs=[];
+  labs.forEach(function(L,i){
+    var cel={};
+    dados.forEach(function(w){
+      var y=yc(w); if(y<bnd[i] || y>=bnd[i+1]) return;
+      var k=colOf(xc(w)); (cel[k]=cel[k]||[]).push(w);
+      if(w.c!=null) confs.push(w.c);
+    });
+    var o={};
+    Object.keys(cel).forEach(function(k){
+      if(k==='leito') return;
+      o[k]=cel[k].sort(function(a,b){ var d=yc(a)-yc(b); return Math.abs(d)>0.5*hMed?d:a.x0-b.x0; }).map(function(w){ return String(w.t).trim(); }).join(' ');
+    });
+    o.leito=L.l;
+    var cl=internRowClean(o); if(cl) out.rows.push(cl);
+  });
+  out.conf=confs.length?Math.round(confs.reduce(function(a,b){ return a+b; },0)/confs.length):null;
+  return out;
+}
+/* ---------- leitores de arquivo ---------- */
+async function internUnzip(buf){                  // .docx/.xlsx são ZIP: leitor mínimo (sem biblioteca externa)
+  var u8=new Uint8Array(buf), dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength), eocd=-1;
+  for(var i=u8.length-22;i>=Math.max(0,u8.length-66000);i--){ if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; } }
+  if(eocd<0) throw new Error('arquivo compactado inválido (não é .docx/.xlsx?)');
+  var n=dv.getUint16(eocd+10,true), off=dv.getUint32(eocd+16,true), files={}, dec=new TextDecoder('utf-8');
+  for(var k=0;k<n;k++){
+    if(dv.getUint32(off,true)!==0x02014b50) break;
+    var nl=dv.getUint16(off+28,true), xl=dv.getUint16(off+30,true), cl=dv.getUint16(off+32,true);
+    files[dec.decode(u8.subarray(off+46,off+46+nl))]={ m:dv.getUint16(off+10,true), cs:dv.getUint32(off+20,true), lo:dv.getUint32(off+42,true) };
+    off+=46+nl+xl+cl;
+  }
+  return { names:Object.keys(files), text:async function(name){
+    var f=files[name]; if(!f) return null;
+    var st=f.lo+30+dv.getUint16(f.lo+26,true)+dv.getUint16(f.lo+28,true), data=u8.subarray(st,st+f.cs), raw;
+    if(f.m===0) raw=data;
+    else if(f.m===8){
+      if(typeof DecompressionStream==='undefined') throw new Error('navegador desatualizado (sem descompactação) — atualize o navegador');
+      raw=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+    } else throw new Error('compressão não suportada no arquivo');
+    return dec.decode(raw);
+  } };
+}
+function internXml(s){ return new DOMParser().parseFromString(s,'application/xml'); }
+function internKids(el,tag){ var o=[]; for(var c=el.firstChild;c;c=c.nextSibling){ if(c.nodeName===tag) o.push(c); } return o; }
+async function internParseDocx(buf){
+  var z=await internUnzip(buf), xml=await z.text('word/document.xml');
+  if(!xml) throw new Error('não é um documento Word .docx válido');
+  var doc=internXml(xml), tbls=doc.getElementsByTagName('w:tbl'), best={ rows:[], score:0 };
+  for(var t=0;t<tbls.length;t++){
+    var grid=internKids(tbls[t],'w:tr').map(function(tr){
+      var cells=[];
+      internKids(tr,'w:tc').forEach(function(tc){
+        var txt=Array.prototype.map.call(tc.getElementsByTagName('w:p'),function(p){
+          return Array.prototype.map.call(p.getElementsByTagName('w:t'),function(x){ return x.textContent; }).join('');
+        }).join(' ').trim();
+        cells.push(txt);
+        var gs=tc.getElementsByTagName('w:gridSpan')[0], span=gs?(+gs.getAttribute('w:val')||1):1;
+        for(var s=1;s<span;s++) cells.push('');
+      });
+      return cells;
+    });
+    var res=internRowsFromGrid(grid); if(res.score>best.score) best=res;
+  }
+  if(!tbls.length) throw new Error('o documento Word não contém tabela');
+  return best;
+}
+async function internParseXlsx(buf){
+  var z=await internUnzip(buf), ss=[], sx=await z.text('xl/sharedStrings.xml');
+  if(sx){ var d=internXml(sx); Array.prototype.forEach.call(d.getElementsByTagName('si'),function(si){ ss.push(Array.prototype.map.call(si.getElementsByTagName('t'),function(t){ return t.textContent; }).join('')); }); }
+  var sheets=z.names.filter(function(n){ return /^xl\/worksheets\/sheet\d+\.xml$/.test(n); }).sort(function(a,b){ return (+a.match(/\d+/)[0])-(+b.match(/\d+/)[0]); });
+  if(!sheets.length) throw new Error('não é uma planilha Excel .xlsx válida');
+  var best={ rows:[], score:0 };
+  for(var s=0;s<sheets.length;s++){
+    var doc=internXml(await z.text(sheets[s])), grid=[];
+    Array.prototype.forEach.call(doc.getElementsByTagName('row'),function(row){
+      var cells=[];
+      Array.prototype.forEach.call(row.getElementsByTagName('c'),function(c){
+        var ref=(c.getAttribute('r')||'').replace(/\d+/g,''), col=0;
+        for(var i=0;i<ref.length;i++) col=col*26+(ref.charCodeAt(i)-64);
+        col=Math.max(0,col-1);
+        var t=c.getAttribute('t'), v=c.getElementsByTagName('v')[0], val='';
+        if(t==='s') val=ss[+(v&&v.textContent)]||'';
+        else if(t==='inlineStr') val=Array.prototype.map.call(c.getElementsByTagName('t'),function(x){ return x.textContent; }).join('');
+        else val=v?v.textContent:'';
+        cells[col]=val;
+      });
+      for(var i=0;i<cells.length;i++) if(cells[i]==null) cells[i]='';
+      grid.push(cells);
+    });
+    var res=internRowsFromGrid(grid); if(res.score>best.score) best=res;
+  }
+  return best;
+}
+function internParseCsv(text){
+  var first=(text.split(/\r?\n/)[0]||''), sep=[';','\t',','].sort(function(a,b){ return first.split(b).length-first.split(a).length; })[0];
+  var grid=[], row=[], cell='', q=false;
+  for(var i=0;i<text.length;i++){
+    var ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){ cell+='"'; i++; } else q=false; } else cell+=ch; continue; }
+    if(ch==='"') q=true;
+    else if(ch===sep){ row.push(cell); cell=''; }
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n') i++; row.push(cell); grid.push(row); row=[]; cell=''; }
+    else cell+=ch;
+  }
+  if(cell||row.length){ row.push(cell); grid.push(row); }
+  return internRowsFromGrid(grid);
+}
+/* ---------- OCR (imagem e PDF escaneado) ---------- */
+var internOcrWorker=null, internImpCancelado=false;
+function internOcrWords(data){
+  var out=[];
+  function add(w){ if(w && w.bbox && w.text!=null && !(w.confidence!=null && w.confidence<30)) out.push({ t:w.text, x0:w.bbox.x0, y0:w.bbox.y0, x1:w.bbox.x1, y1:w.bbox.y1, c:w.confidence }); }
+  if(data && Array.isArray(data.words) && data.words.length) data.words.forEach(add);
+  else if(data && Array.isArray(data.blocks)) data.blocks.forEach(function(b){ (b.paragraphs||[]).forEach(function(p){ (p.lines||[]).forEach(function(l){ (l.words||[]).forEach(add); }); }); });
+  return out;
+}
+function internCanvasGray(src,rot){                // escala p/ OCR de tabela (texto pequeno) + gira + cinza
+  var W=src.naturalWidth||src.width, H=src.naturalHeight||src.height;
+  var s=Math.min(2, 4000/Math.max(W,H)); if(W*s*H*s>20000000) s=Math.sqrt(20000000/(W*H));
+  var w=Math.round(W*s), h=Math.round(H*s), sw=(rot%180)?h:w, sh=(rot%180)?w:h;
+  var c=document.createElement('canvas'); c.width=sw; c.height=sh;
+  var ctx=c.getContext('2d',{willReadFrequently:true});
+  ctx.imageSmoothingEnabled=true; try{ ctx.imageSmoothingQuality='high'; }catch(e){}
+  ctx.translate(sw/2,sh/2); ctx.rotate(rot*Math.PI/180); ctx.drawImage(src,-w/2,-h/2,w,h);
+  var id=ctx.getImageData(0,0,sw,sh), d=id.data;
+  for(var i=0;i<d.length;i+=4){ var g=(d[i]*299+d[i+1]*587+d[i+2]*114)/1000|0; d[i]=d[i+1]=d[i+2]=g; }
+  ctx.putImageData(id,0,0);
+  return c;
+}
+async function internOcr(src,say){
+  if(!window.Tesseract) throw new Error('o motor de leitura de imagem (OCR) não carregou — verifique a internet e recarregue a página');
+  var logger={ logger:function(m){ if(m && m.status==='recognizing text' && say) say('Lendo a imagem… '+Math.round((m.progress||0)*100)+'%'); } };
+  say('Preparando o leitor de imagem (1ª vez pode demorar ~30 s)…');
+  try{ internOcrWorker=await Tesseract.createWorker('por',1,logger); }
+  catch(e){ internOcrWorker=await Tesseract.createWorker('eng',1,logger); }
+  var best=null;
+  try{
+    var rots=[0,90,270,180];
+    for(var i=0;i<rots.length;i++){
+      if(internImpCancelado) throw new Error('cancelado');
+      var cv=internCanvasGray(src,rots[i]);
+      if(i>0) say('Tentando outra orientação da foto ('+rots[i]+'°)…');
+      var res=await internOcrWorker.recognize(cv,{}, { text:true, blocks:true });
+      var r=internRowsFromWords(internOcrWords(res&&res.data));
+      var sc=r.anchors*3+r.labels;
+      if(!best || sc>best.sc) best={ sc:sc, r:r, rot:rots[i] };
+      if(r.anchors>=8 && r.labels>=1) break;      // achou o cabeçalho e as linhas: orientação certa
+    }
+  } finally { try{ await internOcrWorker.terminate(); }catch(e){} internOcrWorker=null; }
+  return best.r;
+}
+function internLoadImg(file){
+  return new Promise(function(res,rej){ var u=URL.createObjectURL(file), im=new Image();
+    im.onload=function(){ res(im); }; im.onerror=function(){ URL.revokeObjectURL(u); rej(new Error('não consegui abrir a imagem')); }; im.src=u; });
+}
+async function internParsePdf(buf,say){
+  if(!window.pdfjsLib) throw new Error('o leitor de PDF ainda não carregou — aguarde alguns segundos e tente de novo');
+  if(!pdfjsLib.GlobalWorkerOptions.workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  var pdf=await pdfjsLib.getDocument({data:buf}).promise, rows=[], ocr=false, anchors=0, labels=0, confs=[];
+  for(var p=1;p<=pdf.numPages;p++){
+    if(internImpCancelado) throw new Error('cancelado');
+    say('Lendo página '+p+' de '+pdf.numPages+'…');
+    var page=await pdf.getPage(p), vp=page.getViewport({scale:1}), tc=await page.getTextContent(), words=[];
+    tc.items.forEach(function(it){
+      var s=(it.str||'').trim(); if(!s) return; var tr=it.transform, h=Math.hypot(tr[2],tr[3])||it.height||8;
+      var a=vp.convertToViewportPoint(tr[4],tr[5]), b=vp.convertToViewportPoint(tr[4]+(it.width||s.length*h*0.5),tr[5]+h);
+      words.push({ t:s, x0:Math.min(a[0],b[0]), x1:Math.max(a[0],b[0]), y0:Math.min(a[1],b[1]), y1:Math.max(a[1],b[1]) });
+    });
+    var r=internRowsFromWords(words);
+    if(r.anchors<4){                               // página sem texto (escaneada) → OCR da página renderizada
+      ocr=true;
+      var sc=Math.min(4, 3500/Math.max(vp.width,vp.height)), v2=page.getViewport({scale:sc});
+      var cv=document.createElement('canvas'); cv.width=Math.round(v2.width); cv.height=Math.round(v2.height);
+      await page.render({ canvasContext:cv.getContext('2d'), viewport:v2 }).promise;
+      r=await internOcr(cv,say);
+    }
+    rows=rows.concat(r.rows); anchors=Math.max(anchors,r.anchors); labels+=r.labels; if(r.conf!=null) confs.push(r.conf);
+  }
+  return { rows:rows, anchors:anchors, labels:labels, ocr:ocr, conf:confs.length?Math.round(confs.reduce(function(a,b){ return a+b; },0)/confs.length):null };
+}
+async function internParseFile(file,say){
+  var nome=(file.name||'').toLowerCase(), ext=(nome.match(/\.([a-z0-9]+)$/)||[])[1]||'', tipo=file.type||'';
+  if(ext==='json'){
+    var lista=JSON.parse(await file.text());
+    if(!Array.isArray(lista)) throw new Error('o JSON precisa ser uma LISTA de pacientes [ {...}, {...} ]');
+    return { fonte:'JSON', rows:lista.map(internRowClean).filter(Boolean) };
+  }
+  if(ext==='docx'){ var d=await internParseDocx(await file.arrayBuffer()); return { fonte:'Word', rows:d.rows, score:d.score }; }
+  if(ext==='xlsx'){ var x=await internParseXlsx(await file.arrayBuffer()); return { fonte:'Excel', rows:x.rows, score:x.score }; }
+  if(ext==='csv'||ext==='txt'){ var c=internParseCsv(await file.text()); return { fonte:'CSV', rows:c.rows, score:c.score }; }
+  if(ext==='doc'||ext==='xls') throw new Error('formato antigo do Office (.'+ext+'): abra no Word/Excel e salve como .'+ext+'x');
+  if(ext==='pdf'||tipo==='application/pdf'){ var p=await internParsePdf(await file.arrayBuffer(),say); return { fonte:p.ocr?'PDF escaneado (OCR)':'PDF', rows:p.rows, anchors:p.anchors, labels:p.labels, ocr:p.ocr, conf:p.conf }; }
+  if(/^(jpe?g|png)$/.test(ext)||/^image\/(jpeg|png)$/.test(tipo)){
+    var img=await internLoadImg(file);
+    try{ var o=await internOcr(img,say); return { fonte:'Imagem (OCR)', rows:o.rows, anchors:o.anchors, labels:o.labels, ocr:true, conf:o.conf }; }
+    finally{ try{ URL.revokeObjectURL(img.src); }catch(e){} }
+  }
+  if(/^(heic|heif)$/.test(ext)) throw new Error('foto HEIC do iPhone: envie como JPG (Ajustes → Câmera → Formatos → "Mais compatível") ou faça um print da foto');
+  throw new Error('formato não suportado: use Word (.docx), Excel (.xlsx), CSV, PDF, JPG, PNG ou JSON');
+}
+/* ---------- casamento com quem já está no quadro ---------- */
+function internMatch(row,usados){
+  var a=internAtdKey(row.numAtendimento), n=internNomeKey(row.nome), best=null;
+  for(var id in internData){
+    if(usados[id]) continue;
+    var r=internData[id], ra=internAtdKey(r.numAtendimento), rn=internNomeKey(r.nome);
+    if(a && ra){ if(a===ra) return { id:id, by:'atd' }; continue; }   // dois nº de atendimento diferentes = pacientes diferentes
+    if(!n || !rn) continue;
+    if(n===rn){ if(!best || best.by!=='nome') best={ id:id, by:'nome', sim:1 }; continue; }
+    if(n.length>=8){ var sim=1-internLev(n,rn)/Math.max(n.length,rn.length); if(sim>=0.85 && (!best || (best.by==='parecido' && sim>best.sim))) best={ id:id, by:'parecido', sim:sim }; }
+  }
+  return best;
+}
+/* ---------- PRÉVIA ---------- */
+var internImp=null;   // { fonte, meta, rows:[{inc, d}], modo:'add'|'subst', tudo:false }
+function internImpPlano(){
+  var usados={}, itens=[];
+  internImp.rows.forEach(function(it,i){
+    var d=it.d, st='novo', m=null;
+    if(!d.nome && !internAtdKey(d.numAtendimento)) st='ignorado';
+    else if(it.inc){
+      m=internMatch(d,usados);
+      if(m){ usados[m.id]=1; var old=internData[m.id];
+        st=(d.leito && internLeitoKey(old.leito)!==internLeitoKey(d.leito))?'leito':'mesmo'; }
+    }
+    itens.push({ i:i, it:it, st:st, m:m });
+  });
+  var saem=internImp.modo==='subst' ? Object.keys(internData).filter(function(id){ return !usados[id]; }) : [];
+  return { itens:itens, saem:saem };
+}
+function internImpSay(t,cor){ var e=gv('internImpMsg'); if(e){ e.textContent=t||''; e.style.color=cor||''; } }
+function internImpFechar(){
+  internImpCancelado=true;
+  if(internOcrWorker){ try{ internOcrWorker.terminate(); }catch(e){} internOcrWorker=null; }
+  var m=gv('internImpModal'); if(m) m.remove(); internImp=null;
+}
+function internImpModal(){
+  var m=gv('internImpModal'); if(m) return m;
+  m=document.createElement('div'); m.id='internImpModal';
+  m.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow:auto';
+  m.innerHTML='<div class="card" style="max-width:1150px;width:100%;margin:auto 0"><div id="internImpBody"></div></div>';
+  document.body.appendChild(m);
+  return m;
+}
+function internImpFile(ev){
+  var f=ev.target && ev.target.files && ev.target.files[0]; ev.target.value='';
   if(!f) return;
-  var rd=new FileReader();
-  rd.onload=function(){
-    var lista=null;
-    try{ lista=JSON.parse(rd.result); }catch(e){ toast('⚠ Arquivo inválido: não é um JSON legível.'); return; }
-    if(!Array.isArray(lista)){ toast('⚠ O JSON precisa ser uma LISTA de pacientes [ {...}, {...} ].'); return; }
-    var atuais={}; for(var k in internData){ atuais[String(internData[k].numAtendimento||'').trim()]=true; }
-    var novos=[], pulados=[], semNum=0;
-    lista.forEach(function(o){
-      if(!o || typeof o!=='object') return;
-      var num=String(o.numAtendimento||'').trim();
-      if(!num){ semNum++; return; }
-      if(atuais[num]){ pulados.push(num); return; }
-      atuais[num]=true;
-      var r={ criadoPor:(currentUser||'')+' (importação)', criadoEm:Date.now(), pendencias:{}, obs:'' };
-      INTERN_CAMPOS.forEach(function(c){ if(o[c]!==undefined && o[c]!==null) r[c]=String(o[c]); });
-      if(o.pendencias && typeof o.pendencias==='object') r.pendencias=o.pendencias;
+  internImpCancelado=false;
+  internImpModal();
+  gv('internImpBody').innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-size:15px">📥 Importar lista — '+escAttr(f.name)+'</b><button class="btn small ghost" onclick="internImpFechar()">✕ Cancelar</button></div>'
+    +'<div id="internImpMsg" style="margin:16px 0;font-size:13px">Lendo o arquivo…</div>';
+  internParseFile(f,function(t){ internImpSay(t); }).then(function(res){
+    if(internImpCancelado) return;
+    if(res.ocr && ((res.anchors||0)<6 || !(res.labels>0))){
+      internImpSay('✕ Não consegui reconhecer a tabela do censo nesta '+(res.fonte.indexOf('PDF')===0?'digitalização':'imagem')+' (achei '+(res.anchors||0)+' de 21 títulos de coluna e '+(res.labels||0)+' leito(s)). A imagem não tem nitidez suficiente. Use o arquivo original do censo (Word, Excel ou PDF do sistema) ou uma foto bem nítida, de frente, sem sombra, com a folha inteira.','var(--red)');
+      return;
+    }
+    if(!res.rows.length){ internImpSay('✕ Nenhum paciente encontrado no arquivo. Confira se é a tabela do censo (com a linha de títulos: Nome Completo, Atendimento, Diagnóstico…).','var(--red)'); return; }
+    internImp={ fonte:res.fonte, ocr:!!res.ocr, conf:res.conf, nome:f.name, modo:'add', tudo:false, rows:res.rows.map(function(d){ return { inc:true, d:d }; }) };
+    internImpRender();
+  }).catch(function(e){
+    if(internImpCancelado) return;
+    internImpSay('✕ Não consegui ler o arquivo: '+((e&&e.message)||e),'var(--red)');
+  });
+}
+var INTERN_ST={ novo:['🆕 Novo','var(--green)'], mesmo:['✓ Já no quadro','var(--muted)'], leito:['🔀 Mudou de leito','var(--amber)'], ignorado:['— Ignorado (sem nome nem atendimento)','var(--muted)'] };
+function internImpRender(){
+  var b=gv('internImpBody'); if(!b||!internImp) return;
+  var pl=internImpPlano(), cont={novo:0,mesmo:0,leito:0};
+  pl.itens.forEach(function(x){ if(x.it.inc && cont[x.st]!=null) cont[x.st]++; });
+  var h='<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:15px">📥 Importar lista — '+escAttr(internImp.nome)+'</b><button class="btn small ghost" onclick="internImpFechar()">✕ Cancelar</button></div>';
+  h+='<div style="font-size:12.5px;color:var(--muted);margin:4px 0 10px">Lido de: <b>'+escAttr(internImp.fonte)+'</b> · '+internImp.rows.length+' paciente(s) encontrados</div>';
+  if(internImp.ocr) h+='<div style="border:1px solid var(--amber);background:rgba(251,191,36,.10);border-radius:10px;padding:10px;font-size:12.5px;margin-bottom:10px">⚠️ <b>Leitura por imagem (OCR)'+(internImp.conf!=null?(' — confiança média '+internImp.conf+'%'):'')+'.</b> Letras e números podem estar trocados. <b>Confira e corrija leito, nome e atendimento de cada linha abaixo</b> antes de aplicar; os demais campos podem ser corrigidos depois em ✏️.</div>';
+  h+='<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin-bottom:10px">'
+    +'<label style="display:flex;gap:6px;align-items:flex-start;cursor:pointer;flex:1 1 300px"><input type="radio" name="internImpModo" style="width:auto;flex:0 0 auto;margin:2px 0 0" '+(internImp.modo==='add'?'checked':'')+' onchange="internImp.modo=\'add\';internImpRender()"> <span><b>Acrescentar</b> — novos entram; quem já está no quadro continua</span></label>'
+    +'<label style="display:flex;gap:6px;align-items:flex-start;cursor:pointer;flex:1 1 300px"><input type="radio" name="internImpModo" style="width:auto;flex:0 0 auto;margin:2px 0 0" '+(internImp.modo==='subst'?'checked':'')+' onchange="internImp.modo=\'subst\';internImpRender()"> <span><b>Substituir todos</b> — o quadro fica igual à lista; quem não está nela sai</span></label>'
+    +'</div>';
+  h+='<label style="display:flex;gap:6px;align-items:flex-start;font-size:12.5px;margin-bottom:10px;cursor:pointer"><input type="checkbox" style="width:auto;flex:0 0 auto;margin:2px 0 0" '+(internImp.tudo?'checked':'')+' onchange="internImp.tudo=this.checked;internImpRender()"> <span>Atualizar também os <b>demais dados do censo</b> (antibiótico, dispositivos, dieta, observações…) de quem já está no quadro. <span style="color:var(--muted)">Desmarcado: para esses pacientes muda só o leito; pendências e anotações da equipe são sempre mantidas.</span></span></label>';
+  h+='<div class="int-tblwrap" style="max-height:52vh;overflow:auto"><table class="int-tbl" style="min-width:820px"><thead><tr><th>Importar</th><th>Leito</th><th>Nome completo</th><th>Atendimento</th><th>Diagnóstico</th><th>Situação</th></tr></thead><tbody>';
+  pl.itens.forEach(function(x){
+    var d=x.it.d, i=x.i, s=INTERN_ST[x.st]||['',''], det='';
+    if(x.m){ var old=internData[x.m.id]||{};
+      if(x.st==='leito') det='<br><span style="font-size:11px">'+escAttr(old.leito||'—')+' → <b>'+escAttr(d.leito)+'</b> · pendências mantidas</span>';
+      if(x.m.by==='parecido') det+='<br><span style="font-size:11px;color:var(--amber)">nome parecido com “'+escAttr(old.nome||'')+'” — confira</span>';
+      else if(x.m.by==='nome' && !internAtdKey(old.numAtendimento) && internAtdKey(d.numAtendimento)) det+='<br><span style="font-size:11px">atendimento provisório será corrigido</span>';
+    }
+    var cor=x.it.inc?s[1]:'var(--muted)';
+    h+='<tr'+(x.it.inc?'':' style="opacity:.5"')+'>'
+      +'<td><input type="checkbox" '+(x.it.inc?'checked':'')+' onchange="internImp.rows['+i+'].inc=this.checked;internImpRender()"></td>'
+      +'<td><input value="'+escAttr(d.leito||'')+'" style="width:64px" onchange="internImp.rows['+i+'].d.leito=internLeitoKey(this.value);internImpRender()"></td>'
+      +'<td><input value="'+escAttr(d.nome||'')+'" style="width:100%;min-width:220px" onchange="internImp.rows['+i+'].d.nome=this.value.trim();internImpRender()"></td>'
+      +'<td><input value="'+escAttr(d.numAtendimento||'')+'" style="width:110px" onchange="internImp.rows['+i+'].d.numAtendimento=this.value.trim();internImpRender()"></td>'
+      +'<td style="font-size:11px">'+escAttr(d.diagnostico||'')+'</td>'
+      +'<td style="font-size:11.5px;color:'+cor+';font-weight:700">'+(x.it.inc?s[0]:'não importar')+det+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  if(pl.saem.length){
+    h+='<div style="border:1px solid var(--red);border-radius:10px;padding:10px;font-size:12.5px;margin-top:10px"><b style="color:var(--red)">Sairão do quadro ('+pl.saem.length+')</b> — não estão na lista importada. Vão para "Altas recentes" com as pendências guardadas (dá para ↩ Reinternar):<br>'
+      +pl.saem.map(function(id){ var r=internData[id]||{}; return '• Leito '+escAttr(r.leito||'—')+' — '+escAttr(r.nome||('Atend. '+(r.numAtendimento||'—'))); }).join('<br>')+'</div>';
+  }
+  h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">'
+    +'<button class="btn primary" onclick="internImpAplicar()">✔ Aplicar ('+cont.novo+' novo(s), '+cont.leito+' troca(s) de leito, '+cont.mesmo+' já no quadro'+(pl.saem.length?(', '+pl.saem.length+' saída(s)'):'')+')</button>'
+    +'<button class="btn ghost" onclick="internImpFechar()">Cancelar</button><span id="internImpMsg" style="font-size:12.5px"></span></div>';
+  b.innerHTML=h;
+}
+function internImpAplicar(){
+  if(!internImp) return;
+  var pl=internImpPlano(), upd={}, agora=Date.now(), n={novo:0,leito:0,mesmo:0,sai:0};
+  if(pl.saem.length && !fbDB){ internImpSay('Substituir exige conexão (as saídas vão para o arquivo de altas na nuvem).','var(--red)'); return; }
+  if(pl.saem.length && !confirm(pl.saem.length+' paciente(s) sairão do quadro (vão para Altas recentes). Confirmar a substituição?')) return;
+  pl.itens.forEach(function(x){
+    if(!x.it.inc || x.st==='ignorado') return;
+    var d=x.it.d, r;
+    if(x.m){
+      r=JSON.parse(JSON.stringify(internData[x.m.id]||{}));
+      if(internImp.tudo) INTERN_CAMPOS.forEach(function(c){ if(c!=='numAtendimento' && d[c]) r[c]=d[c]; });
+      if(d.leito) r.leito=d.leito;
+      if(d.acomodacao) r.acomodacao=d.acomodacao;
+      if(internAtdKey(d.numAtendimento) && !internAtdKey(r.numAtendimento)) r.numAtendimento=d.numAtendimento;
+      internStamp(r); upd['pacientes/'+x.m.id]=r; internData[x.m.id]=r;
+      n[x.st==='leito'?'leito':'mesmo']++;
+    } else {
+      r={ criadoPor:(currentUser||'')+' (importação)', criadoEm:agora, pendencias:{}, obs:'' };
+      INTERN_CAMPOS.forEach(function(c){ if(d[c]) r[c]=d[c]; });
+      if(!r.numAtendimento) r.numAtendimento='CONFERIR-'+(r.leito||'SEM-LEITO');
+      if(!r.pontoAtencao) r.pontoAtencao='QUEDA, BRONCOASPIRAÇÃO, INFECÇÃO';
       internStamp(r);
-      novos.push(r);
-    });
-    if(!novos.length){ toast('Nada a importar: '+(pulados.length? pulados.length+' já estavam no quadro.' : 'nenhum paciente válido no arquivo.')); return; }
-    var msg='Importar '+novos.length+' paciente(s) para o quadro?';
-    if(pulados.length) msg+='\n(Pulados por já existirem: '+pulados.join(', ')+')';
-    if(semNum) msg+='\n('+semNum+' registro(s) sem nº de atendimento serão ignorados)';
-    if(!confirm(msg)) return;
-    var upd={};
-    novos.forEach(function(r,i){
-      var id='p'+Date.now().toString(36)+i.toString(36)+Math.random().toString(36).slice(2,5);
-      internData[id]=r; upd[id]=r;
-    });
-    internLocalSave(); internBadgeUpd(); internRender();
-    if(!fbDB){ toast('⚠ Sem conexão — importação salva só neste aparelho.'); return; }
-    fbDB.ref('internados/pacientes').update(upd).then(function(){
-      toast(novos.length+' paciente(s) importado(s) e compartilhado(s) com a equipe.');
-    }).catch(function(e){
-      toast('⚠ Importou localmente, mas não gravou para a equipe: '+((e&&e.message)||'erro'));
-    });
-  };
-  rd.readAsText(f);
+      var id='p'+agora.toString(36)+x.i.toString(36)+Math.random().toString(36).slice(2,5);
+      upd['pacientes/'+id]=r; internData[id]=r; n.novo++;
+    }
+  });
+  var hj=new Date(), dIso=hj.getFullYear()+'-'+pad(hj.getMonth()+1)+'-'+pad(hj.getDate());
+  pl.saem.forEach(function(id){
+    var rec=JSON.parse(JSON.stringify(internData[id]||{}));
+    rec.tipoAlta='Saída do censo'; rec.nomeAlta='não constava na lista importada ('+internImp.nome+')';
+    rec.dataFim=dIso; rec.horaFim=pad(hj.getHours())+':'+pad(hj.getMinutes()); rec.mesRef=dIso.slice(0,7);
+    rec.altaPor=currentUser||''; rec.altaEm=agora;
+    upd['altas/'+id]=rec; upd['pacientes/'+id]=null; delete internData[id]; n.sai++;
+  });
+  var resumo=n.novo+' novo(s), '+n.leito+' troca(s) de leito, '+n.mesmo+' já no quadro'+(n.sai?(', '+n.sai+' saída(s)'):'');
+  internImpFechar();
+  internLocalSave(); internBadgeUpd(); internRender();
+  if(!fbDB){ toast('⚠ Sem conexão — importação ('+resumo+') salva só neste aparelho.'); return; }
+  fbDB.ref('internados').update(upd).then(function(){ toast('Lista importada: '+resumo+'.'); })
+    .catch(function(e){ toast('⚠ Não gravou para a equipe: '+((e&&e.message)||'erro')); });
 }
 /* ---- utilitários de exibição ---- */
 function internFmtDH(d,h){
@@ -5746,26 +6251,38 @@ function internCell(r,c){
 }
 function internDetalhe(id,r){
   var pend=r.pendencias||{};
-  var pids=Object.keys(pend).sort(function(a,b){ return (pend[a].em||0)-(pend[b].em||0); });
-  var abertas=pids.filter(function(p){ return !pend[p].feito; }).length;
-  var h='<div class="int-detgrid"><div>';
-  h+='<div class="int-secttl">Pendências do plantão'+(pids.length?(' — '+abertas+' aberta(s) de '+pids.length):'')+'</div>';
-  h+='<ul class="int-pend" style="margin:6px 0">';
-  if(!pids.length) h+='<li style="border-style:dashed;color:var(--muted)">Sem pendências registradas.</li>';
-  pids.forEach(function(pid){
-    var p=pend[pid];
-    h+='<li class="'+(p.feito?'done':'')+'">'
-      +'<input type="checkbox" '+(p.feito?'checked':'')+' onchange="internPendToggle(\''+id+'\',\''+pid+'\',this.checked)" title="Marcar como feita">'
-      +'<span class="t">'+escAttr(p.txt||'')
-      +'<span class="meta">'+escAttr(p.por||'—')+' · '+internFmtTs(p.em)
-      +(p.feito?(' &nbsp;→&nbsp; ✔ '+escAttr(p.feitoPor||'—')+' · '+internFmtTs(p.feitoEm)):'')
-      +'</span></span>'
-      +'<span class="px" onclick="internPendDel(\''+id+'\',\''+pid+'\')" title="Excluir pendência">✕</span>'
-      +'</li>';
+  var todos=Object.keys(pend).sort(function(a,b){ return (pend[a].em||0)-(pend[b].em||0); });
+  var h='<div class="int-detgrid"><div class="int-passgrid">';
+  INTERN_PASS.forEach(function(g){
+    var pids=todos.filter(function(p){ return (pend[p].cat||'pend')===g.cat; });
+    var abertas=pids.filter(function(p){ return !pend[p].feito; }).length;
+    var abertosTxt={}; pids.forEach(function(p){ if(!pend[p].feito) abertosTxt[String(pend[p].txt||'').trim().toLowerCase()]=1; });
+    h+='<div class="int-pass">';
+    h+='<div class="int-secttl">'+g.tit+(pids.length?(' — '+abertas+' aberto(s)'):'')+'</div>';
+    h+='<div class="int-chips">';
+    g.opts.forEach(function(o,i){
+      var ja=!!abertosTxt[o.toLowerCase()];
+      h+='<button class="int-chip'+(ja?' on':'')+'" '+(ja?'disabled title="Já está na lista"':'title="Adicionar à lista"')+' onclick="internPassChip(\''+id+'\',\''+g.cat+'\','+i+')">'+(ja?'✓ ':'+ ')+escAttr(o)+'</button>';
+    });
+    h+='</div>';
+    h+='<ul class="int-pend" style="margin:6px 0">';
+    if(!pids.length) h+='<li style="border-style:dashed;color:var(--muted)">Nada registrado.</li>';
+    pids.forEach(function(pid){
+      var p=pend[pid];
+      h+='<li class="'+(p.feito?'done':'')+'">'
+        +'<input type="checkbox" '+(p.feito?'checked':'')+' onchange="internPendToggle(\''+id+'\',\''+pid+'\',this.checked)" title="Marcar como resolvido">'
+        +'<span class="t">'+escAttr(p.txt||'')
+        +'<span class="meta">'+escAttr(p.por||'—')+' · '+internFmtTs(p.em)
+        +(p.feito?(' &nbsp;→&nbsp; ✔ '+escAttr(p.feitoPor||'—')+' · '+internFmtTs(p.feitoEm)):'')
+        +'</span></span>'
+        +'<span class="px" onclick="internPendDel(\''+id+'\',\''+pid+'\')" title="Excluir">✕</span>'
+        +'</li>';
+    });
+    h+='</ul>';
+    h+='<div class="int-addrow"><input id="intPendTxt_'+id+'_'+g.cat+'" type="text" placeholder="'+escAttr(g.ph)+'" onkeydown="internPendKey(event,\''+id+'\',\''+g.cat+'\')"><button class="btn small" onclick="internPendAdd(\''+id+'\',\''+g.cat+'\')" title="Adicionar texto">➕</button></div>';
+    h+='</div>';
   });
-  h+='</ul>';
-  h+='<div class="int-addrow"><input id="intPendTxt_'+id+'" type="text" placeholder="Nova pendência (ex.: colher hemocultura 18h)" onkeydown="internPendKey(event,\''+id+'\')"><button class="btn small" onclick="internPendAdd(\''+id+'\')">➕</button></div>';
-  h+='</div><div>';
+  h+='</div><div>';   /* fecha .int-passgrid e abre o bloco de observações */
   h+='<div class="int-secttl">Observações (coluna OBSERVAÇÕES do censo)</div>';
   h+='<div style="display:flex;gap:6px;align-items:flex-start;margin-top:6px"><textarea id="intObs_'+id+'" rows="3" style="flex:1 1 auto;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font:inherit;font-size:13px" placeholder="Alergia, isolamento, complexidade…">'+escAttr(r.obs||'')+'</textarea><button class="btn small" onclick="internObsSave(\''+id+'\')" title="Salvar observações">💾</button></div>';
   h+='<div class="int-upd" style="margin-top:6px">'+(r.atualizadoPor?('Atualizado por '+escAttr(r.atualizadoPor)+' · '+internFmtTs(r.atualizadoEm)):'')+'</div>';
@@ -5803,11 +6320,11 @@ function internRender(){
     var s='<tr class="int-row"><td class="c-leito">'+escAttr(leitoLbl||r.leito||'—')+'</td>';
     INTERN_COLS.forEach(function(c){ s+='<td class="'+(c[0]==='nome'?'c-nome':'')+(c[3]?' c-nw':'')+'">'+internCell(r,c[0])+'</td>'; });
     s+='<td class="c-acoes">'
-      +'<button class="btn small" onclick="internDetToggle(\''+id+'\')" title="Pendências do plantão e observações">📋<span class="int-pbadge'+(ab?'':' zero')+'">'+ab+'</span></button> '
+      +'<button class="btn small" onclick="internDetToggle(\''+id+'\')" title="Passagem de plantão: pendências, o que avaliar, programação de alta e observações">📋<span class="int-pbadge'+(ab?'':' zero')+'">'+ab+'</span></button> '
       +'<button class="btn small" onclick="internEditar(\''+id+'\')" title="Editar linha">✏️</button> '
       +'<button class="btn small" style="color:var(--amber);border-color:var(--amber)" onclick="internAltaOpen(\''+id+'\')" title="Dar alta">🏥</button>'
       +'</td></tr>';
-    if(internDetOpen[id] || internAltaId===id) s+='<tr class="int-det"><td class="c-leito"></td><td colspan="'+(NCOL-1)+'">'+internDetalhe(id,r)+'</td></tr>';
+    if(internDetOpen[id] || internAltaId===id) s+='<tr class="int-det"><td colspan="'+NCOL+'"><div class="int-detbox"><div class="int-detttl">📋 Passagem de plantão — Leito '+escAttr(leitoLbl||r.leito||'—')+(r.nome?(' · '+escAttr(r.nome)):'')+'</div>'+internDetalhe(id,r)+'</div></td></tr>';
     return s;
   }
   INTERN_LEITOS.forEach(function(L){
@@ -5830,7 +6347,10 @@ function internRender(){
   });
   h+='</tbody></table></div>';
   w.innerHTML=h;
+  internDetFit();
 }
+function internDetFit(){ var w=gv('internWrap'); if(w && w.clientWidth) w.style.setProperty('--intvis', w.clientWidth+'px'); }
+window.addEventListener('resize', function(){ if(internVisible()) internDetFit(); }, {passive:true});
 function internImprimir(){
   internRender();
   var st=document.createElement('style'); st.id='internPageCss'; st.textContent='@page{size:landscape;margin:8mm}';
