@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="app-versao" content="20261024-1035" /><!-- ATUALIZAR A CADA PUBLICAÇÃO (AAAAMMDD-HHMM) — dispara o aviso de versão nova nos navegadores -->
 <title>Plantão — Controle de Plantões Médicos</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="shortcut icon" type="image/png" href="data:image/png;base64,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">
@@ -273,9 +274,10 @@
   body.light input[readonly]{background:#eef4fb}
 
   /* ===== Login ===== */
-  #authOverlay{position:fixed;inset:0;z-index:200;background:#0B1F3A;display:none;align-items:center;justify-content:center;padding:20px}
+  #authOverlay{position:fixed;inset:0;z-index:200;background:#0B1F3A;display:none;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
   #authOverlay.show{display:flex}
-  .auth-card{background:#fff;border-radius:20px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .auth-card{background:#fff;border-radius:20px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4);margin:auto 0;box-sizing:border-box}
+  @media(max-width:420px){ .auth-card{padding:28px 20px} }
   .auth-logo{display:flex;justify-content:center;margin-bottom:22px}
   .auth-logo img{height:44px;width:auto;max-width:100%}
   .auth-card h2{font-size:17px;font-weight:900;color:#0B1F3A;text-align:center;margin:0 0 4px}
@@ -292,6 +294,16 @@
   .auth-btn:hover{background:#1558c0}
   .auth-err{color:#C7362F;font-size:12px;text-align:center;margin-top:8px;min-height:18px;font-weight:600}
   .auth-hint{color:#667085;font-size:12px;margin-top:14px;text-align:center;line-height:1.5}
+  .auth-or{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:#667085;font-size:11px;font-weight:700;letter-spacing:.06em}
+  .auth-or span{flex:1;height:1px;background:#D0D8E8}
+  .auth-gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid #D0D8E8;background:#fff;border-radius:10px;padding:11px 14px;font-size:14px;font-weight:700;cursor:pointer;color:#3c4043;font-family:'DM Sans',sans-serif;transition:.15s}
+  .auth-gbtn:hover{background:#F4F7FC;border-color:#B8C4DA}
+  .auth-info{background:#EAF2FF;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#1F4E9B;margin-bottom:16px;line-height:1.55}
+  .auth-link{background:none;border:none;cursor:pointer;color:#667085;font-size:12px;font-family:'DM Sans',sans-serif;text-decoration:underline;margin-top:6px}
+  .nav-embutido{background:#FFF7E6;border:1px solid #F5D08A;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A4B00;line-height:1.5;margin:10px 0;text-align:left}
+  .nav-embutido .nav-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .nav-embutido .nav-btn{display:inline-flex;align-items:center;border:1.5px solid #C78A14;background:#fff;color:#7A4B00;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:800;cursor:pointer;text-decoration:none;font-family:inherit}
+  .nav-embutido input{width:100%;margin-top:8px;font-size:12px;padding:8px;border:1px solid #F5D08A;border-radius:8px;box-sizing:border-box}
   .user-badge{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;margin-right:6px}
   .user-badge .av{width:30px;height:30px;border-radius:50%;background:var(--panel-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:12px}
 
@@ -490,6 +502,13 @@
   .int-pend .px{cursor:pointer;color:var(--muted);font-weight:800;padding:0 2px}
   .int-pend .px:hover{color:var(--red)}
   .int-addrow{display:flex;gap:6px}
+  .int-extenso{margin-top:10px;padding-top:8px;border-top:1px dashed var(--border)}
+  .int-extttl{font-size:12px;font-weight:800;color:var(--text);margin-bottom:4px}
+  .int-extttl span{font-weight:400;color:var(--muted)}
+  .int-extenso textarea{width:100%;box-sizing:border-box;min-height:84px;resize:vertical;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px;font:inherit;font-size:13px;line-height:1.4}
+  .int-extrow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .int-extmeta{font-size:11px;color:var(--muted)}
+  .int-extmeta.sujo{color:var(--amber);font-weight:700}
   .int-addrow input{flex:1 1 auto;min-width:0}
   .int-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
   .int-form label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--muted);font-weight:700}
@@ -519,6 +538,8 @@
   .int-tbl tr.int-off td{background:#C9CED6;color:#334155;font-weight:800;padding:3px 5px}
   body:not(.light) .int-tbl tr.int-off td{background:#1b2536;color:#94a3b8}
   .int-tbl tr.int-vazio td{color:var(--muted)}
+  .int-tbl tr.int-off td.c-acoes{font-weight:600}
+  .int-tbl .int-libera{color:var(--green,#16a34a);border-color:var(--green,#16a34a);white-space:nowrap}
   .int-tbl tr.int-row:hover td:not(.c-leito){background:var(--panel-2)}
   .int-tbl td.c-acoes{min-width:96px;white-space:nowrap}
   .int-tbl td.c-acoes .btn{padding:3px 6px;font-size:11px}
@@ -574,6 +595,9 @@
     <div class="login-field"><label>Usuário</label><input id="loginUser" autocomplete="username" onkeydown="if(event.key==='Enter')tryLogin()"></div>
     <div class="login-field"><label>Senha</label><div class="pw-wrap"><input id="loginPass" type="password" autocomplete="current-password" placeholder="sua senha" onkeydown="if(event.key==='Enter')tryLogin()"><button type="button" class="pw-eye" data-for="loginPass" title="Mostrar senha" onclick="togglePw('loginPass',this)">👁</button></div></div>
     <button class="auth-btn" onclick="tryLogin()">Entrar</button>
+    <div class="auth-or"><span></span>OU<span></span></div>
+    <div id="navAvisoLogin"></div>
+    <button type="button" id="btnGoogle" class="auth-gbtn" onclick="entrarComGoogle()"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Entrar com Google</button>
     <div class="auth-err" id="loginErr"></div>
     <div class="auth-hint">Primeiro acesso: use a senha provisória e defina a sua.</div>
   </div>
@@ -586,6 +610,17 @@
     <div class="login-field"><label>Confirmar senha</label><div class="pw-wrap"><input id="firstPass2" type="password" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitSetPass()"><button type="button" class="pw-eye" data-for="firstPass2" title="Mostrar senha" onclick="togglePw('firstPass2',this)">👁</button></div></div>
     <button class="auth-btn" onclick="submitSetPass()">Salvar e entrar</button>
     <div class="auth-err" id="setPassErr"></div>
+  </div>
+  <!-- tela: vincular conta Google (Google ainda não vinculado → confirma com usuário + senha UMA vez) -->
+  <div class="auth-card" id="scVincular" style="display:none">
+    <h2>Vincular conta Google</h2>
+    <p class="sub">Confirme que a conta é sua</p>
+    <div class="auth-info">A conta Google <b id="vincGmail"></b> ainda não está vinculada à plataforma.<br><b>Digite seu usuário e senha da plataforma uma única vez</b> para ligar este Google à sua conta. Depois disso, é só usar "Entrar com Google".</div>
+    <div class="login-field"><label>Usuário</label><input id="vincUser" autocomplete="username" placeholder="ex.: gabrielcm" onkeydown="if(event.key==='Enter')vincularGoogleComSenha()"></div>
+    <div class="login-field"><label>Senha</label><div class="pw-wrap"><input id="vincPass" type="password" autocomplete="current-password" placeholder="sua senha" onkeydown="if(event.key==='Enter')vincularGoogleComSenha()"><button type="button" class="pw-eye" data-for="vincPass" title="Mostrar senha" onclick="togglePw('vincPass',this)">👁</button></div></div>
+    <button class="auth-btn" id="btnVincular" onclick="vincularGoogleComSenha()">Vincular e entrar</button>
+    <div class="auth-err" id="vincErr"></div>
+    <div class="auth-hint" style="margin-top:8px"><button type="button" class="auth-link" onclick="vincularCancelar()">← Voltar ao login</button></div>
   </div>
 </div>
 
@@ -1161,6 +1196,7 @@
     <div class="card" id="perfilAvisoCard">
       <div id="perfilAviso"><div class="hint">Carregando a escala da semana…</div></div>
     </div>
+    <div class="card" id="googleVinculoBox" style="display:none"></div>
     <div class="card">
       <p class="sec-title">🔑 Trocar minha senha</p>
       <p class="sec-sub">Vale só para a sua conta neste dispositivo/navegador.</p>
@@ -1413,7 +1449,7 @@ function hidePw(id){
   if(btn){ btn.textContent='👁'; btn.title='Mostrar senha'; }
   if(_pwTimers[id]){ clearTimeout(_pwTimers[id]); _pwTimers[id]=null; }
 }
-function showAuthScreen(id){ ['scLogin','scSetPass'].forEach(function(s){ var el=document.getElementById(s); if(el) el.style.display=(s===id)?'block':'none'; }); }
+function showAuthScreen(id){ ['scLogin','scSetPass','scVincular'].forEach(function(s){ var el=document.getElementById(s); if(el) el.style.display=(s===id)?'block':'none'; }); }
 function showLogin(){ document.getElementById('authOverlay').classList.add('show'); showAuthScreen('scLogin'); setTimeout(function(){ var u=document.getElementById('loginUser'); if(u) u.focus(); },60); }
 async function tryLogin(){
   var err=document.getElementById('loginErr'); err.style.color=''; err.textContent='';
@@ -1450,12 +1486,14 @@ async function submitSetPass(){
   try{
     await fbAuth.currentUser.updatePassword(p1);
     if(dbReady()){ try{ await dataRef().child('pwSet').set(true); }catch(e){} }
+    await googleVincularPendenteAposSenha();   // veio do "Entrar com Google": vincula agora que há senha pessoal
     proceedToApp(currentUser);
   }catch(e){ err.textContent=fbErrMsg(e); }
 }
 function completeLogin(login){
   currentUser=login;
   CURRENT_UID = (fbAuth && fbAuth.currentUser) ? fbAuth.currentUser.uid : null;
+  _authUidFeito = CURRENT_UID;
   // Verifica se o médico já criou senha pessoal; se não, obriga a criar antes de abrir o app.
   if(dbReady()){
     dataRef().child('pwSet').once('value').then(function(snap){
@@ -1501,13 +1539,278 @@ function logout(){
   detachDataListener(); escEnfDetach(); escPedDetach(); escPedData={};
   escCorrDetach(); escCorrStore={}; escTrocaAceite={}; chatShutdown();
   internDetach(); internData={}; var ib=document.getElementById('internBadge'); if(ib) ib.style.display='none';
-  currentUser=null; CURRENT_UID=null; shifts=[]; escalaData=[]; escEnfData={};
+  currentUser=null; CURRENT_UID=null; _authUidFeito=null; shifts=[]; escalaData=[]; escEnfData={};
+  _googleCredPendente=null; _googleEmailPendente=''; _googleVincAposSenha=false;
   if(fbAuth){ try{ fbAuth.signOut(); }catch(e){} }
   var pb=document.getElementById('escPedBadge'); if(pb) pb.style.display='none';
   var b=document.getElementById('userBadge'); if(b) b.style.display='none';
   document.getElementById('loginUser').value=''; document.getElementById('loginPass').value='';
   var le=document.getElementById('loginErr'); if(le){ le.style.color=''; le.textContent=''; }
   showLogin();
+}
+
+/* ================= Login com Google (mesmo modelo da Comissão de Prontuários) =================
+   • Conta CLÁSSICA (login@plantao.local) continua sendo a identidade: o Google é só um 2º jeito de entrar,
+     VINCULADO à mesma conta (mesmo uid → mesmos dados, mesmas permissões; o e-mail da conta não muda).
+   • Vincular: (a) logado, em Meu Perfil → "Vincular conta Google"; ou (b) "Entrar com Google" com um Google ainda
+     não vinculado → a conta Google solta criada pelo Firebase é APAGADA na hora e a credencial fica guardada →
+     tela "Vincular conta Google" pede usuário + senha UMA vez → linkWithCredential.
+   • Segurança: só vincula se o médico JÁ criou a senha pessoal (pwSet). A senha provisória está no código-fonte;
+     sem esta trava, quem soubesse um login ainda sem senha pessoal prenderia o PRÓPRIO Google à conta dele.
+   • Navegador de aplicativo (WhatsApp, Instagram…): o Google recusa (403 disallowed_useragent) → aviso antes. */
+var _gFluxo=false;                       // true enquanto um fluxo Google/vínculo controla o login (o listener de auth espera)
+var _authUidFeito=null;                  // uid cujo login já foi concluído (evita concluir 2×)
+var _googleCredPendente=null, _googleEmailPendente='', _googleVincAposSenha=false;
+function navInfo(){
+  var ua=navigator.userAgent||'';
+  var ios=/iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  var android=/Android/.test(ua), mac=!ios && /Macintosh/.test(ua);
+  var app='';
+  if(/Instagram/i.test(ua)) app='Instagram';
+  else if(/FBAN|FBAV|FB_IAB|FBIOS|FB4A/.test(ua)) app=/Messenger/i.test(ua)?'Messenger':'Facebook';
+  else if(/LinkedInApp/i.test(ua)) app='LinkedIn';
+  else if(/musical_ly|BytedanceWebview|TikTok/i.test(ua)) app='TikTok';
+  else if(/Snapchat/i.test(ua)) app='Snapchat';
+  else if(/ Line\//.test(ua)) app='LINE';
+  else if(/Twitter/i.test(ua)) app='X (Twitter)';
+  else if(/WhatsApp/i.test(ua)) app='WhatsApp';
+  else if(/Telegram/i.test(ua)) app='Telegram';
+  else if(android && /; wv\)/.test(ua)) app='aplicativo';
+  else if(ios && !/Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua)) app='aplicativo';
+  var nome='navegador';
+  if(/GSA\//.test(ua)) nome='app do Google';
+  else if(/EdgiOS|EdgA\/|Edg\//.test(ua)) nome='Edge';
+  else if(/SamsungBrowser/.test(ua)) nome='Samsung Internet';
+  else if(/FxiOS|Firefox\//.test(ua)) nome='Firefox';
+  else if(/OPiOS|OPR\//.test(ua)) nome='Opera';
+  else if(/CriOS|Chrome\//.test(ua)) nome='Chrome';
+  else if(/Safari\//.test(ua)) nome='Safari';
+  var toque=(navigator.maxTouchPoints||0)>0 && (ios||android);
+  return {ios:ios, android:android, mac:mac, app:app, nome:nome, verbo:toque?'Toque':'Clique'};
+}
+function navPopupDica(){
+  var n=navInfo();
+  if(n.ios){
+    if(n.nome==='app do Google') return 'toque em ⋯ e escolha "Abrir no Safari", e entre por lá.';
+    if(n.nome==='Chrome') return 'no Chrome do iPhone, toque em ⋯ → Configurações → Configurações de conteúdo → Bloquear pop-ups → desative.';
+    if(n.nome==='Firefox') return 'no Firefox do iPhone, toque em ☰ → Configurações → desative "Bloquear janelas pop-up".';
+    if(n.nome==='Edge') return 'no Edge do iPhone, toque em ⋯ → Configurações → Privacidade e segurança → Bloquear pop-ups → desative.';
+    return 'Ajustes do iPhone → Safari → desative "Bloquear Pop-ups".';
+  }
+  if(n.android){
+    if(n.nome==='Samsung Internet') return 'no Samsung Internet, toque em ☰ → Configurações → Sites e downloads → desative "Bloquear pop-ups".';
+    if(n.nome==='Firefox') return 'no Firefox, toque no aviso de pop-up bloqueado e permita para este site.';
+    return 'no Chrome, toque no aviso "Pop-up bloqueado" e escolha "Sempre mostrar", ou ⋮ → Configurações → Configurações do site → Pop-ups e redirecionamentos → permita.';
+  }
+  if(n.mac && n.nome==='Safari') return 'no Safari do Mac, menu Safari → Ajustes → Sites → Janelas Pop-up → comissoeshps.github.io → Permitir.';
+  return 'clique no ícone de pop-up bloqueado na barra de endereço e escolha "Sempre permitir" para este site.';
+}
+function navLinkAtual(){ return location.origin+location.pathname; }
+function navIntentChrome(){
+  var u=navLinkAtual();
+  return 'intent://'+u.replace(/^https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(u)+';end';
+}
+function navCopiarLink(btn){
+  var u=navLinkAtual();
+  var mostrar=function(){ var box=btn&&btn.closest('.nav-embutido'); if(!box) return; var i=box.querySelector('input'); if(!i){ i=document.createElement('input'); i.readOnly=true; box.appendChild(i); } i.value=u; i.focus(); i.select(); };
+  try{ navigator.clipboard.writeText(u).then(function(){ if(btn) btn.textContent='Link copiado ✔ — cole no '+(navInfo().ios?'Safari':'Chrome'); }, mostrar); }
+  catch(e){ mostrar(); }
+}
+var _navForcarGoogle=false;
+function navEmbutidoHtml(retry){
+  var n=navInfo(); if(!n.app) return '';
+  var onde=n.ios?'no Safari':'no Chrome';
+  var como=n.ios?'toque em <b>⋯</b> (ou no ícone de compartilhar) e escolha <b>Abrir no Safari</b> / <b>Abrir no navegador</b>'
+                :'toque em <b>⋮</b> e escolha <b>Abrir no Chrome</b> / <b>Abrir no navegador</b>';
+  return '<div class="nav-embutido">⚠️ Você abriu a plataforma dentro do '+(n.app==='aplicativo'?'navegador de um <b>aplicativo</b>':'<b>'+escapeHtml(n.app)+'</b>')+'. '
+    +'O Google <b>não permite</b> entrar com a conta Google dentro de aplicativos. Abra '+onde+': '+como+'.'
+    +'<div class="nav-acoes"><button type="button" class="nav-btn" onclick="navCopiarLink(this)">Copiar link</button>'
+    +(n.android?'<a class="nav-btn" href="'+escapeHtml(navIntentChrome())+'">Abrir no Chrome</a>':'')
+    +(retry?'<button type="button" class="nav-btn" onclick="_navForcarGoogle=true;entrarComGoogle()">Tentar mesmo assim</button>':'')
+    +'</div><div style="font-size:11.5px;margin-top:6px">Usuário e senha funcionam normalmente aqui.</div></div>';
+}
+function navAvisosRender(){ var a=document.getElementById('navAvisoLogin'); if(a) a.innerHTML=navEmbutidoHtml(''); }
+(function(){ var f=function(){ try{ navAvisosRender(); }catch(e){} }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',f); else setTimeout(f,0); })();
+function googleProvider(){ var p=new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({prompt:'select_account'}); return p; }
+function temSenha(u){ return !!(u && (u.providerData||[]).some(function(p){ return p && p.providerId==='password'; })); }
+function googleInfo(u){ return (u && (u.providerData||[]).find(function(p){ return p && p.providerId==='google.com'; })) || null; }
+/* login da plataforma a partir do usuário Firebase: o e-mail da conta clássica (login@plantao.local) */
+function loginDoFirebase(u){
+  if(!u) return null;
+  var em=String(u.email||'').toLowerCase();
+  if(em.slice(-('@'+AUTH_EMAIL_DOMAIN).length)!=='@'+AUTH_EMAIL_DOMAIN){
+    var pw=(u.providerData||[]).find(function(p){ return p && p.providerId==='password'; });
+    em=String((pw&&pw.email)||'').toLowerCase();
+    if(em.slice(-('@'+AUTH_EMAIL_DOMAIN).length)!=='@'+AUTH_EMAIL_DOMAIN) return null;
+  }
+  var l=loginFromEmail(em);
+  return userByLogin(l) ? l : null;
+}
+function msgErroGoogle(e){
+  var c=(e&&e.code)||'';
+  if(c==='auth/popup-closed-by-user' || c==='auth/cancelled-popup-request') return '';
+  if(c==='auth/popup-blocked'){
+    var n=navInfo();
+    if(n.app) return 'Você está dentro do '+n.app+', que não deixa abrir a janela do Google. Abra a plataforma '+(n.ios?'no Safari':'no Chrome')+' (veja o aviso acima) ou entre com usuário e senha.';
+    return 'O '+n.nome+' segurou a janela do Google. '+n.verbo+' de novo em "Entrar com Google" — na 2ª vez costuma abrir. Se ainda assim não abrir: '+navPopupDica();
+  }
+  if(c==='auth/operation-not-supported-in-this-environment' || c==='auth/web-storage-unsupported')
+    return 'Este navegador não permite o login com Google (armazenamento bloqueado ou navegador de aplicativo). Abra a plataforma no '+(navInfo().ios?'Safari':'Chrome')+' comum ou entre com usuário e senha.';
+  if(c==='auth/unauthorized-domain') return 'Este endereço ainda não está autorizado para login com Google. Avise o escalista.';
+  if(c==='auth/operation-not-allowed') return 'O login com Google ainda não foi ativado. Avise o escalista.';
+  if(c==='auth/network-request-failed') return 'Sem conexão. Verifique a internet e tente de novo.';
+  return '';
+}
+var MSG_G_SEM_VINCULO='Esta conta Google ainda não está vinculada à plataforma. Entre com <b>usuário e senha</b> e vincule o Google em <b>Meu Perfil</b>.';
+async function pwSetDe(uid){
+  try{ if(!fbDB) return null; var s=await fbDB.ref('users/'+uid+'/pwSet').once('value'); return s.val()===true; }catch(e){ return null; }
+}
+async function entrarComGoogle(){
+  var err=document.getElementById('loginErr'), btn=document.getElementById('btnGoogle');
+  if(err){ err.style.color=''; err.textContent=''; }
+  if(navInfo().app && !_navForcarGoogle){ var av=document.getElementById('navAvisoLogin'); if(av){ av.innerHTML=navEmbutidoHtml('retry'); try{ av.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){} } else if(err) err.innerHTML=navEmbutidoHtml('retry'); return; }
+  _navForcarGoogle=false;
+  initFirebase();
+  if(!fbAuth){ if(err) err.textContent='Sem conexão com o servidor. Recarregue a página.'; return; }
+  if(btn){ btn.disabled=true; btn.style.opacity='.6'; }
+  _gFluxo=true;
+  try{
+    var cred;
+    try{ cred=await fbAuth.signInWithPopup(googleProvider()); }
+    catch(e){
+      if(e && e.code==='auth/admin-restricted-operation'){ if(err) err.innerHTML=MSG_G_SEM_VINCULO; return; }
+      var c=(e&&e.code)||'';
+      if(c==='auth/popup-closed-by-user' || c==='auth/cancelled-popup-request') return;   // o médico fechou a janela: sem mensagem
+      var m=msgErroGoogle(e); if(err) err.textContent = m || (c ? ('Não foi possível entrar com Google ('+c+').') : '');
+      return;
+    }
+    var u=cred.user, login=loginDoFirebase(u);
+    if(login && temSenha(u)){                       // Google já vinculado a uma conta da plataforma
+      _gFluxo=false;
+      completeLogin(login);
+      return;
+    }
+    // Google ainda sem vínculo: guarda a credencial e APAGA a conta solta (senão este Google não pode ser ligado à conta original)
+    _googleCredPendente = cred.credential || null;
+    _googleEmailPendente = u.email || '';
+    var apagou=false;
+    try{ await u.delete(); apagou=true; }catch(_){ try{ await fbAuth.signOut(); }catch(__){} }
+    if(_googleCredPendente){ vincularMostrar(apagou); return; }
+    if(err) err.innerHTML=MSG_G_SEM_VINCULO;
+  } finally {
+    _gFluxo=false;
+    if(btn){ btn.disabled=false; btn.style.opacity=''; }
+  }
+}
+function vincularMostrar(apagou){
+  showAuthScreen('scVincular');
+  var g=document.getElementById('vincGmail'); if(g) g.textContent=_googleEmailPendente||'';
+  var e=document.getElementById('vincErr'); if(e){ e.style.color=''; e.textContent = apagou ? '' : 'Atenção: não foi possível liberar esta conta Google automaticamente. Se o vínculo falhar, avise o escalista.'; }
+  setTimeout(function(){ var i=document.getElementById('vincUser'); if(i) i.focus(); },100);
+}
+function vincularCancelar(){
+  _googleCredPendente=null; _googleEmailPendente=''; _googleVincAposSenha=false;
+  ['vincUser','vincPass'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  showLogin();
+}
+function vincMsgErro(e){
+  var c=(e&&e.code)||'';
+  if(c==='auth/credential-already-in-use'||c==='auth/email-already-in-use') return 'Este Google ainda está preso a outra conta no Firebase. Peça ao escalista para excluí-la em Firebase → Authentication ('+(_googleEmailPendente||'')+') e tente de novo.';
+  if(c==='auth/provider-already-linked') return 'Sua conta já tem outro Google vinculado. Para trocar, desvincule em Meu Perfil.';
+  if(c==='auth/invalid-credential' || c==='auth/user-token-expired') return 'A confirmação do Google expirou. Volte e clique em "Entrar com Google" de novo.';
+  return 'Não foi possível vincular ('+(c||'erro')+').';
+}
+async function vincularGoogleComSenha(){
+  var err=document.getElementById('vincErr'), btn=document.getElementById('btnVincular');
+  if(err){ err.style.color=''; err.textContent=''; }
+  var login=String((document.getElementById('vincUser')||{}).value||'').trim().toLowerCase();
+  var pass=String((document.getElementById('vincPass')||{}).value||'');
+  if(!_googleCredPendente){ if(err) err.textContent='A confirmação do Google expirou. Volte e clique em "Entrar com Google" de novo.'; return; }
+  if(!userByLogin(login) || !pass){ if(err) err.textContent='Usuário ou senha incorretos.'; return; }
+  initFirebase(); if(!fbAuth){ if(err) err.textContent='Sem conexão com o servidor. Recarregue a página.'; return; }
+  if(btn){ btn.disabled=true; btn.textContent='Verificando…'; }
+  _gFluxo=true;
+  try{
+    try{ await fbAuth.signInWithEmailAndPassword(authEmail(login), pass); }
+    catch(e){ if(err) err.textContent=fbErrMsg(e); return; }
+    var uid=fbAuth.currentUser.uid;
+    var pw=await pwSetDe(uid);
+    if(pw!==true){
+      // ainda com a senha provisória (ou sem como confirmar): primeiro cria a senha pessoal; o vínculo acontece logo depois
+      _googleVincAposSenha=true;
+      ['vincUser','vincPass'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+      _gFluxo=false;
+      completeLogin(login);
+      return;
+    }
+    try{ await fbAuth.currentUser.linkWithCredential(_googleCredPendente); }
+    catch(e){ var m=vincMsgErro(e); try{ await fbAuth.signOut(); }catch(_){} if(err) err.textContent=m; return; }
+    var gm=_googleEmailPendente;
+    _googleCredPendente=null; _googleEmailPendente='';
+    ['vincUser','vincPass'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+    _gFluxo=false;
+    completeLogin(login);
+    setTimeout(function(){ try{ toast('✔ Conta Google '+gm+' vinculada. Da próxima vez, use "Entrar com Google".'); }catch(e){} }, 400);
+  } finally {
+    _gFluxo=false;
+    if(btn){ btn.disabled=false; btn.textContent='Vincular e entrar'; }
+  }
+}
+/* chamado depois que o médico cria a senha pessoal (primeiro acesso) quando veio do "Entrar com Google" */
+async function googleVincularPendenteAposSenha(){
+  if(!_googleVincAposSenha || !_googleCredPendente || !fbAuth || !fbAuth.currentUser) return;
+  var gm=_googleEmailPendente, cr=_googleCredPendente;
+  _googleVincAposSenha=false; _googleCredPendente=null; _googleEmailPendente='';
+  try{ await fbAuth.currentUser.linkWithCredential(cr); toast('✔ Conta Google '+gm+' vinculada. Da próxima vez, use "Entrar com Google".'); }
+  catch(e){ toast('⚠ Senha criada, mas o Google não foi vinculado: '+vincMsgErro(e).replace(/<[^>]+>/g,'')+' Vincule em Meu Perfil.'); }
+  try{ googleBoxRender(); }catch(e){}
+}
+/* ---------- Meu Perfil: vincular / desvincular ---------- */
+function googleBoxRender(msg, ok){
+  var el=document.getElementById('googleVinculoBox'); if(!el) return;
+  var u=fbAuth && fbAuth.currentUser;
+  if(!u){ el.style.display='none'; return; }
+  el.style.display='block';
+  var g=googleInfo(u), senha=temSenha(u);
+  var h='<p class="sec-title">🔗 Entrar com Google</p><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="flex:1 1 260px">';
+  if(g){
+    h+='<b style="color:var(--green)">Conta Google vinculada</b><br><span class="hint">'+escapeHtml(g.email||'')+' — você pode usar <b>Entrar com Google</b> na tela de login. Seu usuário e senha continuam valendo.</span>';
+    h+='</div>'+(senha ? '<button class="btn" onclick="googleDesvincular()">Desvincular</button>' : '<span class="hint">Conta só Google (não pode desvincular).</span>');
+  } else {
+    h+='<span class="hint">Vincule sua conta Google para entrar sem digitar senha. Seu usuário e senha continuam valendo.</span>';
+    h+='</div><button class="btn primary" onclick="googleVincular()">Vincular conta Google</button>';
+  }
+  h+='</div>';
+  if(msg) h+='<div style="margin-top:8px;font-size:12.5px;font-weight:600;color:'+(ok?'var(--green)':'var(--red)')+'">'+escapeHtml(msg)+'</div>';
+  el.innerHTML=h;
+}
+async function googleVincular(){
+  try{
+    initFirebase();
+    if(!fbAuth || !fbAuth.currentUser) throw {message:'Sessão expirada. Entre de novo.'};
+    var ni=navInfo();
+    if(ni.app){ googleBoxRender('Você está dentro do '+(ni.app==='aplicativo'?'navegador de um aplicativo':ni.app)+', onde o Google não permite vincular contas. Abra a plataforma '+(ni.ios?'no Safari':'no Chrome')+' e vincule por lá.', false); return; }
+    var pw=await pwSetDe(fbAuth.currentUser.uid);
+    if(pw===false){ googleBoxRender('Crie sua senha pessoal antes de vincular o Google (a senha provisória não serve para isso).', false); return; }
+    await fbAuth.currentUser.linkWithPopup(googleProvider());
+    googleBoxRender('✔ Conta Google vinculada. Da próxima vez, use "Entrar com Google".', true);
+  }catch(e){
+    var c=(e&&e.code)||'', m=msgErroGoogle(e);
+    if(c==='auth/credential-already-in-use' || c==='auth/email-already-in-use')
+      m='Esta conta Google já está ligada a outro cadastro no Firebase (provavelmente de um "Entrar com Google" antigo). Peça ao escalista para excluí-lo em Firebase → Authentication e tente de novo.';
+    else if(c==='auth/provider-already-linked') m='Já existe uma conta Google vinculada a este usuário.';
+    else if(c==='auth/requires-recent-login') m='Por segurança, saia e entre de novo antes de vincular.';
+    else if(!m && c) m='Não foi possível vincular ('+c+').';
+    else if(!m && e && e.message) m=e.message;
+    if(m) googleBoxRender(m, false); else googleBoxRender();
+  }
+}
+async function googleDesvincular(){
+  var u=fbAuth && fbAuth.currentUser; if(!u) return;
+  if(!temSenha(u)){ googleBoxRender('Sua conta é só Google; desvincular deixaria você sem acesso.', false); return; }
+  if(!confirm('Desvincular a conta Google? Você continuará entrando com usuário e senha.')) return;
+  try{ await u.unlink('google.com'); googleBoxRender('✔ Conta Google desvinculada.', true); }
+  catch(e){ googleBoxRender('Não foi possível desvincular ('+((e&&e.code)||'erro')+').', false); }
 }
 
 /* ================= Regras de segurança da sessão ================= */
@@ -4108,6 +4411,7 @@ function renderPerfil(){
     wel.innerHTML=saud+', <b>'+escapeHtml((u.nome||'').split(' ')[0])+'</b>! 👋 Bem-vindo(a) à plataforma da Enfermaria de Pediatria do Hospital Paulo Sacramento. Abaixo está a escala da semana e o seu próximo plantão.';
   }
   perfilRenderAviso();
+  try{ googleBoxRender(); }catch(e){}
 }
 /* ---- Aviso no topo do Meu Perfil: escala da semana + próximo plantão do médico logado ---- */
 var PERFIL_SLOTS=[{k:'manhaM1',t:'Manhã',faixa:'07h–13h'},{k:'manhaM2',t:'Manhã',faixa:'07h–13h'},{k:'tardeM1',t:'Tarde',faixa:'13h–19h'},{k:'tardeM2',t:'Tarde',faixa:'13h–19h'}];
@@ -5215,11 +5519,19 @@ function init(){
   initFirebase();
   if(fbAuth){
     fbAuth.onAuthStateChanged(function(fu){
+      if(_gFluxo) return;                        // fluxo Google/vínculo em andamento: ele mesmo conclui o login
+      var sv=document.getElementById('scVincular'), naVinculacao=!!(sv && sv.style.display==='block');
       if(fu){
-        var login=loginFromEmail(fu.email);
-        if(login && userByLogin(login)){ completeLogin(login); }
-        else { try{ fbAuth.signOut(); }catch(e){} showLogin(); }
-      } else { showLogin(); }
+        var cur=fbAuth.currentUser;
+        if(!cur || cur.uid!==fu.uid) return;     // aviso atrasado de um usuário que já saiu (ex.: conta Google solta já apagada)
+        if(_authUidFeito===fu.uid) return;       // login deste usuário já concluído (evita concluir 2×)
+        var login=loginDoFirebase(fu);
+        if(login && temSenha(fu)){ completeLogin(login); }
+        else { try{ fbAuth.signOut(); }catch(e){} if(!naVinculacao) showLogin(); }
+      } else {
+        _authUidFeito=null;
+        if(!naVinculacao) showLogin();           // não tira o médico da tela de vínculo
+      }
     });
   } else { showLogin(); }
 }
@@ -5453,15 +5765,18 @@ function internAgora(){ return Date.now()+(internSrvOff||0); }   /* hora do serv
 function internDetach(){
   if(internRef){ try{ internRef.off(); }catch(e){} internRef=null; }
   if(internOffRef){ try{ internOffRef.off(); }catch(e){} internOffRef=null; }
+  if(internLeitosRef){ try{ internLeitosRef.off(); }catch(e){} internLeitosRef=null; }
   if(internTimer){ clearInterval(internTimer); internTimer=null; }
   internProc={};
 }
 function internAttach(){
   internDetach();
   internData=internLocalLoad(); internFbErr=null; internFrom=Object.keys(internData).length?'local':'vazio';
+  internLeitosSt=internLeitosLoad();
   internBadgeUpd();
   if(!fbDB){ if(internVisible()) internRender(); return; }
   try{ internOffRef=fbDB.ref('.info/serverTimeOffset'); internOffRef.on('value', function(s){ internSrvOff=+((s&&s.val())||0); }); }catch(e){}
+  try{ internLeitosRef=fbDB.ref('internados/leitos'); internLeitosRef.on('value', function(s){ internLeitosSt=(s&&s.val())||{}; internLeitosSave(); if(internVisible()) internRender(); }, function(){}); }catch(e){}
   internTimer=setInterval(internAltasProgCheck, 30000);   // altas programadas: confere a cada 30 s
   internRef=fbDB.ref('internados/pacientes');
   internRef.on('value', function(snap){
@@ -5695,7 +6010,7 @@ function internPendAdd(id,cat){
   cat=cat||'pend';
   var inp=gv('intPendTxt_'+id+'_'+cat); if(!inp) return;
   var t=(inp.value||'').trim(); if(!t){ inp.focus(); return; }
-  internItemAdd(id,cat,t);
+  if(internItemAdd(id,cat,t)){ var n=gv('intPendTxt_'+id+'_'+cat); if(n){ n.value=''; n.focus(); } }
 }
 function internPassChip(id,cat,idx){
   var g=INTERN_PASS.filter(function(x){ return x.cat===cat; })[0]; if(!g||!g.opts[idx]) return;
@@ -5717,6 +6032,39 @@ function internPendDel(id,pid){
   delete r.pendencias[pid];
   internStamp(r); internAssume(r);
   internPush(id);
+}
+/* ---- pendências por extenso (texto livre) ---- */
+function internExtSave(id){
+  var ta=gv('intPendExt_'+id), r=internData[id]; if(!ta||!r) return;
+  var v=String(ta.value||'').replace(/\s+$/,'');
+  if(v===(r.pendTexto||'')){ var m=gv('intPendExtMeta_'+id); if(m) m.classList.remove('sujo'); toast('Nada mudou no texto.'); return; }
+  r.pendTexto=v; r.pendTextoPor=currentUser||''; r.pendTextoEm=Date.now();
+  internStamp(r); internAssume(r);
+  internPush(id);
+  toast(v?'✍️ Pendências por extenso salvas.':'Texto de pendências apagado.');
+}
+function internExtKey(ev,id){ if(ev.key==='Enter' && (ev.ctrlKey||ev.metaKey)){ ev.preventDefault(); internExtSave(id); } }
+function internExtSujo(id){ var m=gv('intPendExtMeta_'+id); if(m){ m.textContent='● Não salvo — clique em 💾 Salvar texto'; m.classList.add('sujo'); } }
+/* ---- rascunhos: o quadro é redesenhado a cada atualização da nuvem; preserva o que está sendo digitado ---- */
+function internRascunhos(w){
+  var o={list:[],foco:null}, a=document.activeElement;
+  w.querySelectorAll('input[id],textarea[id]').forEach(function(el){
+    if(/^(checkbox|radio|file|button|submit)$/i.test(el.type||'')) return;
+    if(el.value!==el.defaultValue) o.list.push({id:el.id, v:el.value, d:el.defaultValue});
+  });
+  if(a && a.id && w.contains(a)){ var f={id:a.id, sc:a.scrollTop}; try{ f.s=a.selectionStart; f.e=a.selectionEnd; }catch(e){} o.foco=f; }
+  return o;
+}
+function internRestaura(o){
+  var conflito=false;
+  o.list.forEach(function(x){
+    var el=gv(x.id); if(!el) return;
+    if(el.defaultValue!==x.d && el.defaultValue!==x.v) conflito=true;   // alguém salvou outro texto enquanto você digitava
+    el.value=x.v;
+    if(x.id.indexOf('intPendExt_')===0) internExtSujo(x.id.slice(11));
+  });
+  if(o.foco){ var el=gv(o.foco.id); if(el){ try{ el.focus({preventScroll:true}); if(o.foco.s!=null) el.setSelectionRange(o.foco.s,o.foco.e); el.scrollTop=o.foco.sc; }catch(e){} } }
+  if(conflito) toast('⚠ Outro médico salvou um texto que você está editando. Se salvar, o seu substitui o dele — confira antes.');
 }
 /* ---- observações livres ---- */
 function internObsSave(id){
@@ -6342,6 +6690,34 @@ var INTERN_LEITOS=[
   {l:'208A',a:'BERÇO',off:true},{l:'208B',a:'CAMA',off:true},{l:'209A',a:'BERÇO',off:true},{l:'209B',a:'BERÇO',off:true},
   {l:'210A',a:'BERÇO'},{l:'210B',a:'BERÇO'},{l:'211A',a:'BERÇO',off:true},{l:'211B',a:'BERÇO',off:true}
 ];
+/* Estado de ativação dos leitos, compartilhado pela equipe: internados/leitos/<LEITO> = {off, por, em}.
+   Sem registro = vale o padrão do mapa acima (off:true = desativado). Qualquer médico logado libera/desativa. */
+var internLeitosSt={}, internLeitosRef=null;
+function internLeitosSave(){ try{ store.set('pl_internLeitos', JSON.stringify(internLeitosSt||{})); }catch(e){} }
+function internLeitosLoad(){ try{ return JSON.parse(store.get('pl_internLeitos')||'{}')||{}; }catch(e){ return {}; } }
+function internLeitoOff(L){ var o=internLeitosSt&&internLeitosSt[L.l]; return (o && typeof o.off==='boolean') ? o.off : !!L.off; }
+function internLeitoInfo(L){ var o=internLeitosSt&&internLeitosSt[L.l]; return (o && o.por) ? (' — '+(o.off?'desativado':'liberado')+' por '+internNomeMed(o.por)+' em '+internFmtTs(o.em)) : ''; }
+function internLeitoSet(leito, off){
+  var L=INTERN_LEITOS.filter(function(x){ return x.l===leito; })[0]; if(!L) return;
+  if(internLeitoOff(L)===!!off) return;
+  if(!fbDB){ toast('⚠ Liberar/desativar leito exige conexão — a mudança vale para toda a equipe.'); return; }
+  var ocupado=Object.keys(internData||{}).some(function(id){ return String(internData[id].leito||'').trim().toUpperCase()===leito.toUpperCase(); });
+  if(off && ocupado){ toast('Leito '+leito+' está ocupado — dê alta ou mude o paciente de leito antes de desativar.'); return; }
+  var msg = off
+    ? 'Desativar o leito '+leito+'?\n\nEle aparecerá como DESATIVADO para toda a equipe e não poderá receber internação até ser liberado de novo.'
+    : 'Liberar o leito '+leito+' ('+L.a+')?\n\nUse quando o hospital reativar o leito. Ele passa a aparecer como disponível ("➕ Internar") para toda a equipe.';
+  if(!confirm(msg)) return;
+  var ant=internLeitosSt[leito];
+  internLeitosSt[leito]={ off:!!off, por:currentUser||'', em:Date.now() };
+  internLeitosSave(); internRender();
+  fbDB.ref('internados/leitos/'+leito).set(internLeitosSt[leito]).then(function(){
+    toast(off ? ('🔒 Leito '+leito+' desativado.') : ('🔓 Leito '+leito+' liberado para internação.'));
+  }).catch(function(e){
+    if(ant) internLeitosSt[leito]=ant; else delete internLeitosSt[leito];
+    internLeitosSave(); internRender();
+    toast('⚠ Não gravou para a equipe: '+((e&&e.message)||'erro')+' — leito continua como estava.');
+  });
+}
 /* Colunas na MESMA ordem e com os MESMOS títulos da folha do censo. */
 var INTERN_COLS=[
   ['dataInicio','DATA ADMISSÃO',80,1],['nome','Nome Completo',175],['numAtendimento','Atendimento',86,1],['peso','Peso',48,1],
@@ -6400,6 +6776,12 @@ function internDetalhe(id,r){
     });
     h+='</ul>';
     h+='<div class="int-addrow"><input id="intPendTxt_'+id+'_'+g.cat+'" type="text" placeholder="'+escAttr(g.ph)+'" onkeydown="internPendKey(event,\''+id+'\',\''+g.cat+'\')"><button class="btn small" onclick="internPendAdd(\''+id+'\',\''+g.cat+'\')" title="Adicionar texto">➕</button></div>';
+    if(g.cat==='pend'){
+      h+='<div class="int-extenso"><div class="int-extttl">✍️ Pendências por extenso <span>(opcional — texto livre, várias linhas)</span></div>'
+        +'<textarea id="intPendExt_'+id+'" rows="4" placeholder="Se preferir, escreva aqui com suas palavras as pendências deste paciente…" oninput="internExtSujo(\''+id+'\')" onkeydown="internExtKey(event,\''+id+'\')">'+escAttr(r.pendTexto||'')+'</textarea>'
+        +'<div class="int-extrow"><span class="int-extmeta" id="intPendExtMeta_'+id+'">'+(r.pendTextoEm?('Salvo por '+escAttr(internNomeCurto(r.pendTextoPor))+' · '+internFmtTs(r.pendTextoEm)):'Ainda não preenchido')+'</span>'
+        +'<button class="btn small" onclick="internExtSave(\''+id+'\')" title="Salvar (Ctrl/⌘ + Enter)">💾 Salvar texto</button></div></div>';
+    }
     h+='</div>';
   });
   h+='</div><div>';   /* fecha .int-passgrid e abre o bloco de observações */
@@ -6441,7 +6823,7 @@ function internRender(){
     var s='<tr class="int-row"><td class="c-leito">'+escAttr(leitoLbl||r.leito||'—')+selo+'</td>';
     INTERN_COLS.forEach(function(c){ s+='<td class="'+(c[0]==='nome'?'c-nome':'')+(c[3]?' c-nw':'')+'">'+internCell(r,c[0])+'</td>'; });
     s+='<td class="c-acoes">'
-      +'<button class="btn small" onclick="internDetToggle(\''+id+'\')" title="Passagem de plantão: pendências, o que avaliar, programação de alta e observações">📋<span class="int-pbadge'+(ab?'':' zero')+'">'+ab+'</span></button> '
+      +'<button class="btn small" onclick="internDetToggle(\''+id+'\')" title="Passagem de plantão: pendências, o que avaliar, programação de alta e observações">📋<span class="int-pbadge'+(ab?'':' zero')+'">'+ab+'</span>'+(r.pendTexto?'<span title="Tem pendências escritas por extenso">✍️</span>':'')+'</button> '
       +'<button class="btn small" onclick="internEditar(\''+id+'\')" title="Editar linha">✏️</button> '
       +'<button class="btn small" style="color:var(--amber);border-color:var(--amber)" onclick="internAltaOpen(\''+id+'\')" title="Dar alta">🏥</button>'
       +'</td></tr>';
@@ -6452,22 +6834,26 @@ function internRender(){
     var key=L.l.toUpperCase(); conhecidos[key]=true;
     var lista=porLeito[key]||[];
     if(lista.length){ lista.forEach(function(id){ h+=linhaPaciente(L.l,id); }); return; }
-    if(L.off){
-      h+='<tr class="int-off"><td class="c-leito">'+escAttr(L.l)+'</td><td></td><td>DESATIVADO</td>';
+    var info=internLeitoInfo(L);
+    if(internLeitoOff(L)){
+      h+='<tr class="int-off"'+(info?' title="Leito '+escAttr(L.l+info)+'"':'')+'><td class="c-leito">'+escAttr(L.l)+'</td><td></td><td>DESATIVADO</td>';
       for(var i=2;i<INTERN_COLS.length;i++) h+='<td>'+(INTERN_COLS[i][0]==='idade'?escAttr(L.a):'')+'</td>';
-      h+='<td class="c-acoes"></td></tr>';
+      h+='<td class="c-acoes"><button class="btn small int-libera" onclick="internLeitoSet(\''+L.l+'\',false)" title="Leito reativado pelo hospital? Liberar para internação">🔓 Liberar leito</button></td></tr>';
       return;
     }
-    h+='<tr class="int-vazio"><td class="c-leito">'+escAttr(L.l)+'</td>';
+    h+='<tr class="int-vazio"'+(info?' title="Leito '+escAttr(L.l+info)+'"':'')+'><td class="c-leito">'+escAttr(L.l)+'</td>';
     INTERN_COLS.forEach(function(c){ h+='<td>'+(c[0]==='idade'?escAttr(L.a):'')+'</td>'; });
-    h+='<td class="c-acoes"><button class="btn small" onclick="internNovoLeito(\''+L.l+'\',\''+L.a+'\')" title="Internar paciente neste leito">➕ Internar</button></td></tr>';
+    h+='<td class="c-acoes"><button class="btn small" onclick="internNovoLeito(\''+L.l+'\',\''+L.a+'\')" title="Internar paciente neste leito">➕ Internar</button> '
+      +'<button class="btn small" onclick="internLeitoSet(\''+L.l+'\',true)" title="Desativar este leito (fica DESATIVADO para toda a equipe)'+escAttr(info)+'">🔒</button></td></tr>';
   });
   // pacientes em leitos fora do mapa (ou sem leito) entram no fim
   Object.keys(porLeito).filter(function(k){ return !conhecidos[k]; }).sort().forEach(function(k){
     porLeito[k].forEach(function(id){ h+=linhaPaciente(k||'—',id); });
   });
   h+='</tbody></table></div>';
+  var rasc=internRascunhos(w);
   w.innerHTML=h;
+  internRestaura(rasc);
   internDetFit();
 }
 function internDetFit(){ var w=gv('internWrap'); if(w && w.clientWidth) w.style.setProperty('--intvis', w.clientWidth+'px'); }
@@ -6509,6 +6895,125 @@ function heroScrollInit(){
 heroScrollInit();
 
 init();
+</script>
+<!-- ===== Aviso de versão nova (verifica a versão publicada no GitHub Pages) ===== -->
+<style>
+  #verBar{position:fixed;left:0;right:0;bottom:0;z-index:250;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 16px;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:#0B1F3A;color:#fff;border-top:3px solid #38bdf8;
+    box-shadow:0 -4px 18px rgba(0,0,0,.28);font:600 14px/1.35 'DM Sans',system-ui,-apple-system,sans-serif;text-align:center}
+  #verBar .ver-sub{font-weight:400;opacity:.85}
+  #verBar .ver-bts{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  #verBar button{border-radius:10px;padding:8px 14px;font:700 14px 'DM Sans',system-ui,-apple-system,sans-serif;cursor:pointer;min-height:38px}
+  #verBar .ver-ok{background:#38bdf8;color:#0B1F3A;border:none}
+  #verBar .ver-ok:disabled{opacity:.6;cursor:wait}
+  #verBar .ver-dep{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45)}
+  body.ver-on{padding-bottom:64px}
+  body.ver-on .toast{bottom:84px}
+  body.ver-on #chatBtn{bottom:84px!important}
+  body.ver-on #chatWin{bottom:148px!important}
+  @media(max-width:640px){
+    #verBar{font-size:13px}
+    body.ver-on{padding-bottom:110px}
+    body.ver-on .toast{bottom:124px}
+    body.ver-on #chatBtn{bottom:124px!important}
+    body.ver-on #chatWin{bottom:188px!important}
+  }
+  @media print{#verBar{display:none!important}}
+</style>
+<script>
+(function(){
+  /* Versão desta cópia = <meta name="app-versao"> do <head>. A cada publicação o número muda (AAAAMMDD-HHMM).
+     A página baixa SÓ o começo do arquivo publicado (sem cache), lê o número de lá e, se for MAIOR, mostra a barra. */
+  var meta=document.querySelector('meta[name="app-versao"]');
+  var ATUAL=meta?meta.getAttribute('content'):'';
+  var nova='', adiadoAte=0, ultimo=0, editados=[];
+  var RE=/<meta\s+name="app-versao"\s+content="([^"]+)"/;
+  window.APP_VERSAO=ATUAL;
+
+  function caminho(){ return location.pathname; }
+  function lerVersaoPublicada(){
+    var url=caminho()+'?vc='+Date.now();
+    return fetch(url,{cache:'no-store',credentials:'same-origin'}).then(function(r){
+      if(!r.ok) return '';
+      if(!r.body || !r.body.getReader || !window.TextDecoder) return r.text().then(function(t){ var m=RE.exec(t); return m?m[1]:''; });
+      var rd=r.body.getReader(), dec=new TextDecoder(), txt='';
+      function passo(){
+        return rd.read().then(function(p){
+          if(p.value) txt+=dec.decode(p.value,{stream:true});
+          var m=RE.exec(txt);
+          if(m || p.done || txt.length>65536){ try{ rd.cancel(); }catch(e){} return m?m[1]:''; }
+          return passo();
+        });
+      }
+      return passo();
+    });
+  }
+  function verificar(forcar){
+    if(!/^https?:$/.test(location.protocol) || !ATUAL || !window.fetch) return;
+    if(navigator.onLine===false || document.hidden) return;
+    var agora=Date.now(); if(!forcar && agora-ultimo<60000) return; ultimo=agora;
+    lerVersaoPublicada().then(function(v){
+      if(v && v>ATUAL){ nova=v; mostrar(); }
+    }).catch(function(){});
+  }
+  function mostrar(){
+    if(!nova || Date.now()<adiadoAte) return;
+    var b=document.getElementById('verBar');
+    if(!b){ b=document.createElement('div'); b.id='verBar'; b.setAttribute('role','alert'); document.body.appendChild(b); }
+    b.innerHTML='<span>🆕 <b>Nova versão da plataforma disponível.</b> <span class="ver-sub">Você está usando uma versão antiga — atualize para receber as correções.</span></span>'
+      +'<span class="ver-bts"><button type="button" class="ver-ok" id="verOk">Atualizar agora</button><button type="button" class="ver-dep" id="verDep">Depois</button></span>';
+    document.getElementById('verOk').onclick=atualizar;
+    document.getElementById('verDep').onclick=depois;
+    document.body.classList.add('ver-on');
+  }
+  function esconder(){ var b=document.getElementById('verBar'); if(b) b.remove(); document.body.classList.remove('ver-on'); }
+  function depois(){ adiadoAte=Date.now()+30*60000; esconder(); }
+  function textoNaoSalvo(){
+    return editados.some(function(t){
+      return t.isConnected && t.type!=='password' && (t.offsetParent!==null || t.getClientRects().length>0) && String(t.value||'').trim()!=='';
+    });
+  }
+  function aviso(msg){ if(typeof window.toast==='function'){ try{ window.toast(msg); return; }catch(e){} } }
+  function atualizar(){
+    if(navigator.onLine===false){ aviso('Sem conexão — atualize quando a internet voltar.'); alert('Sem conexão com a internet agora. Atualize quando a conexão voltar.'); return; }
+    if(textoNaoSalvo() && !confirm('Há texto digitado na tela que pode ainda não ter sido salvo.\n\nSe atualizar agora, esse texto será perdido.\n\nAtualizar mesmo assim?')) return;
+    var bt=document.getElementById('verOk'); if(bt){ bt.disabled=true; bt.textContent='Atualizando…'; }
+    try{ sessionStorage.setItem('verTentou',nova); }catch(e){}
+    var destino=caminho()+'?v='+encodeURIComponent(nova)+location.hash;
+    var feito=false; function ir(){ if(feito) return; feito=true; location.replace(destino); }
+    // renova também o cache normal do navegador (para a próxima abertura sem ?v= já vir nova)
+    try{ fetch(caminho(),{cache:'reload',credentials:'same-origin'}).then(ir,ir); }catch(e){ ir(); }
+    setTimeout(ir,5000);
+  }
+  // registra campos em que o usuário DIGITOU (para avisar antes de perder texto)
+  document.addEventListener('input',function(e){
+    var t=e.target; if(!t || !/^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
+    if(/^(checkbox|radio|file|range|color|password)$/i.test(t.type||'')) return;
+    if(editados.indexOf(t)<0){ editados.push(t); if(editados.length>80) editados.shift(); }
+  },true);
+
+  // depois de atualizar: limpa o ?v= da barra de endereço e confirma
+  try{
+    if(/[?&]v(c)?=/.test(location.search)) history.replaceState(null,'',caminho()+location.hash);
+    var tentou=sessionStorage.getItem('verTentou');
+    if(tentou){
+      sessionStorage.removeItem('verTentou');
+      setTimeout(function(){
+        if(tentou>ATUAL) aviso('A versão nova ainda está sendo distribuída pelo GitHub — tente de novo em 1–2 minutos.');
+        else aviso('✅ Plataforma atualizada (versão '+ATUAL+').');
+      },1200);
+    }
+  }catch(e){}
+
+  // quando verificar: 8 s após abrir; a cada 10 min com a aba visível; ao voltar para a aba/app; ao reconectar
+  setTimeout(function(){ verificar(true); },8000);
+  setInterval(function(){ verificar(false); },10*60000);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) verificar(false); });
+  window.addEventListener('focus',function(){ verificar(false); });
+  window.addEventListener('online',function(){ verificar(true); });
+  window.addEventListener('pageshow',function(e){ if(e.persisted) verificar(true); });
+  window.verificarVersao=verificar;
+})();
 </script>
 </body>
 </html>
