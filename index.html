@@ -505,7 +505,7 @@
   /* --- Tabela no layout do censo impresso --- */
   .int-tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid #9fb0c9;border-radius:8px}
   body:not(.light) .int-tblwrap{border-color:#40506b}
-  .int-tbl{border-collapse:collapse;width:100%;min-width:2350px;font-size:11px;line-height:1.3}
+  .int-tbl{border-collapse:collapse;width:100%;min-width:2480px;font-size:11px;line-height:1.3}
   .int-tbl th,.int-tbl td{border:1px solid #9fb0c9;padding:5px 6px;text-align:center;vertical-align:middle;word-break:normal;overflow-wrap:break-word;hyphens:none}
   .int-tbl td.c-nw{white-space:nowrap}
   body:not(.light) .int-tbl th,body:not(.light) .int-tbl td{border-color:#3d4d68}
@@ -528,6 +528,13 @@
   .int-detgrid{display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(220px,1fr);gap:14px;max-width:1100px}
   @media(max-width:700px){ .int-detgrid{grid-template-columns:1fr} }
   .int-printhdr{display:none}
+  .int-prog{display:inline-block;margin-top:3px;padding:1px 5px;border-radius:8px;background:var(--amber);color:#1e293b;font-size:9.5px;font-weight:900;white-space:nowrap}
+  .int-resp{font-size:10px;color:var(--muted);display:block;font-weight:600}
+  .int-saida{margin-top:12px;border-top:1px dashed var(--border);padding-top:10px;display:flex;flex-direction:column;gap:10px}
+  .int-saida .lin{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+  .int-saida label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);font-weight:700}
+  .int-saida input,.int-saida select{background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px;font:inherit;font-size:13px}
+  .int-progbox{border:1px solid var(--amber);background:rgba(251,191,36,.10);border-radius:10px;padding:8px 10px;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .int-detgrid{grid-template-columns:1fr!important;max-width:none}
   .int-passgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}
   .int-detbox{position:sticky;left:0;width:calc(var(--intvis,1000px) - 26px);max-width:1250px;box-sizing:border-box}
@@ -655,6 +662,7 @@
           <button class="btn ghost" onclick="internFormFechar()">Cancelar</button>
           <span id="intFerr" style="color:var(--red);font-size:12.5px;align-self:center"></span>
         </div>
+        <div id="internFormSaida" style="display:none"></div>
       </div>
       <div id="internPrintArea">
         <div class="int-printhdr" id="internPrintHdr"></div>
@@ -5440,17 +5448,27 @@ var INTERN_ALTAS=['Alta melhorada','Alta a pedido','Transferência','Evasão','�
 function internLocalSave(){ try{ store.set('pl_internados', JSON.stringify(internData||{})); }catch(e){} }
 function internLocalLoad(){ try{ return JSON.parse(store.get('pl_internados')||'{}')||{}; }catch(e){ return {}; } }
 function internVisible(){ var v=gv('view-internados'); return !!(v && v.classList.contains('active')); }
-function internDetach(){ if(internRef){ try{ internRef.off(); }catch(e){} internRef=null; } }
+var internSrvOff=0, internOffRef=null, internTimer=null, internProc={};
+function internAgora(){ return Date.now()+(internSrvOff||0); }   /* hora do servidor Firebase (não depende do relógio do aparelho) */
+function internDetach(){
+  if(internRef){ try{ internRef.off(); }catch(e){} internRef=null; }
+  if(internOffRef){ try{ internOffRef.off(); }catch(e){} internOffRef=null; }
+  if(internTimer){ clearInterval(internTimer); internTimer=null; }
+  internProc={};
+}
 function internAttach(){
   internDetach();
   internData=internLocalLoad(); internFbErr=null; internFrom=Object.keys(internData).length?'local':'vazio';
   internBadgeUpd();
   if(!fbDB){ if(internVisible()) internRender(); return; }
+  try{ internOffRef=fbDB.ref('.info/serverTimeOffset'); internOffRef.on('value', function(s){ internSrvOff=+((s&&s.val())||0); }); }catch(e){}
+  internTimer=setInterval(internAltasProgCheck, 30000);   // altas programadas: confere a cada 30 s
   internRef=fbDB.ref('internados/pacientes');
   internRef.on('value', function(snap){
     internData=snap.val()||{}; internFbErr=null; internFrom='nuvem';
     internLocalSave(); internBadgeUpd();
     if(internVisible()) internRender();
+    internAltasProgCheck();
   }, function(err){
     internFbErr=(err&&err.message)||'acesso negado';
     console.warn('internados:', internFbErr);
@@ -5475,6 +5493,80 @@ function internPush(id){
   });
 }
 function internStamp(r){ r.atualizadoPor=currentUser||''; r.atualizadoEm=Date.now(); }
+/* ---- médico responsável: quem editou por último assume (o próximo que editar passa a ser o responsável) ---- */
+function internNomeMed(login){ var u=userByLogin(login); return u?u.nome:(login||'—'); }
+function internNomeCurto(login){ var n=internNomeMed(login).split(/\s+/); return n.length>1?(n[0]+' '+n[n.length-1]):n[0]; }
+function internAssume(r){
+  if(!r || !currentUser) return;
+  var ant=r.medicoResp && r.medicoResp.login;
+  r.medicoResp={ login:currentUser, em:internAgora() };
+  if(ant!==currentUser) toast('👨‍⚕️ Você agora é o médico responsável por '+(r.nome||('Atend. '+(r.numAtendimento||'—')))+'.');
+}
+function internDataIso(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function internHoraTxt(d){ return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function internQuando(ts){ var d=new Date(ts), h=new Date(internAgora()); var mesmoDia=d.toDateString()===h.toDateString(); return (mesmoDia?'hoje':(pad(d.getDate())+'/'+pad(d.getMonth()+1)))+' às '+internHoraTxt(d); }
+/* Tira o paciente do quadro (libera o leito) e guarda o registro em "Altas recentes" — num único update atômico. */
+function internSaida(id,info){
+  var r=internData[id]; if(!r) return Promise.resolve();
+  if(!fbDB) return Promise.reject(new Error('sem conexão'));
+  var rec=JSON.parse(JSON.stringify(r));
+  for(var k in info) rec[k]=info[k];
+  rec.mesRef=String(rec.dataFim||'').slice(0,7); rec.altaEm=internAgora();
+  delete rec.altaProgramada;
+  delete internData[id];
+  if(internAltaId===id) internAltaId=null;
+  internLocalSave(); internBadgeUpd(); internRender();
+  var upd={}; upd['altas/'+id]=rec; upd['pacientes/'+id]=null;
+  return fbDB.ref('internados').update(upd);
+}
+function internApagar(id){
+  var r=internData[id]; if(!r) return;
+  if(!fbDB){ toast('⚠ Apagar exige conexão (o registro vai para "Altas recentes" na nuvem).'); return; }
+  var quem=r.nome||('Atend. '+(r.numAtendimento||'—'));
+  if(!confirm('Apagar '+quem+' do quadro e LIBERAR O LEITO '+(r.leito||'—')+' agora?\n\nO registro vai para "Altas recentes" (dá para ↩ Reinternar se foi engano).')) return;
+  var d=new Date(internAgora());
+  internFormFechar();
+  internSaida(id,{ tipoAlta:'Removido do quadro', nomeAlta:'apagado por '+internNomeMed(currentUser), dataFim:internDataIso(d), horaFim:internHoraTxt(d), altaPor:currentUser||'' })
+    .then(function(){ toast('🗑 '+quem+' removido — leito '+(r.leito||'—')+' liberado.'); })
+    .catch(function(e){ toast('⚠ Não removeu na nuvem: '+((e&&e.message)||'erro')); });
+}
+function internProgramarAlta(id){
+  var r=internData[id]; if(!r) return;
+  var dt=gv('intProgData').value, hr=gv('intProgHora').value, tipo=gv('intProgTipo').value||'Alta melhorada', msg=gv('intProgMsg');
+  if(!dt || !hr){ msg.textContent='Informe o dia e a hora da alta.'; return; }
+  var p=dt.split('-'), q=hr.split(':'), ts=new Date(+p[0],+p[1]-1,+p[2],+q[0],+q[1]).getTime();
+  if(!(ts>internAgora()+30000)){ msg.textContent='Esse horário já passou. Para liberar o leito agora, use "🗑 Apagar paciente".'; return; }
+  r.altaProgramada={ em:ts, tipo:tipo, por:currentUser||'', marcadoEm:internAgora() };
+  internStamp(r); internAssume(r);
+  internPush(id);
+  internFormOpen(id);
+  toast('⏰ Alta programada: '+(r.nome||('leito '+(r.leito||'—')))+' — '+internQuando(ts)+'. O leito será liberado nesse horário.');
+}
+function internCancelarProg(id){
+  var r=internData[id]; if(!r || !r.altaProgramada) return;
+  if(!confirm('Cancelar a alta programada para '+internQuando(r.altaProgramada.em)+'?')) return;
+  delete r.altaProgramada;
+  internStamp(r); internAssume(r);
+  internPush(id);
+  internFormOpen(id);
+  toast('Programação de alta cancelada.');
+}
+/* Executa as altas programadas vencidas. Roda em qualquer aparelho com o app aberto (a cada 30 s e a cada
+   atualização do quadro); se ninguém estiver com o app aberto no horário, roda assim que o 1º abrir.
+   Dois aparelhos ao mesmo tempo gravam o mesmo resultado (idempotente). */
+function internAltasProgCheck(){
+  if(!fbDB || !currentUser) return;
+  var agora=internAgora();
+  Object.keys(internData||{}).forEach(function(id){
+    var r=internData[id], ap=r && r.altaProgramada;
+    if(!ap || !ap.em || ap.em>agora || internProc[id]) return;
+    internProc[id]=1;
+    var d=new Date(ap.em), lt=r.leito||'—', quem=r.nome||('Atend. '+(r.numAtendimento||'—'));
+    internSaida(id,{ tipoAlta:ap.tipo||'Alta melhorada', nomeAlta:'alta programada por '+internNomeMed(ap.por), dataFim:internDataIso(d), horaFim:internHoraTxt(d), altaPor:ap.por||'' })
+      .then(function(){ toast('⏰ Alta programada executada: '+quem+' — leito '+lt+' liberado.'); })
+      .catch(function(){ delete internProc[id]; });
+  });
+}
 /* ---- formulário novo/editar ---- */
 var internEditId=null;
 function internFormFechar(){ var c=gv('internFormCard'); if(c) c.style.display='none'; internEditId=null; }
@@ -5508,9 +5600,39 @@ function internFormOpen(id){
   gv('intFvisita').value=r.visita||'';
   gv('intFmulti').value=r.pendMulti||'';
   gv('intFerr').textContent='';
+  internFormSaidaRender(id);
   var c=gv('internFormCard'); c.style.display='block';
   c.scrollIntoView({behavior:'smooth',block:'nearest'});
   gv('intFleito').focus();
+}
+function internFormSaidaRender(id){
+  var box=gv('internFormSaida'); if(!box) return;
+  var r=id && internData[id];
+  if(!r){ box.style.display='none'; box.innerHTML=''; return; }
+  var resp=r.medicoResp&&r.medicoResp.login;
+  var h='<div class="int-saida">';
+  h+='<div style="font-size:12.5px">👨‍⚕️ Médico responsável: <b>'+escAttr(resp?internNomeMed(resp):'—')+'</b>'
+    +(resp?(' <span style="color:var(--muted)">(desde '+internFmtTs(r.medicoResp.em)+')</span>'):'')
+    +(resp!==currentUser?' — <span style="color:var(--amber);font-weight:700">ao salvar qualquer alteração, você passa a ser o responsável.</span>':'')+'</div>';
+  h+='<div class="int-secttl">Saída do paciente</div>';
+  if(r.altaProgramada){
+    var ap=r.altaProgramada;
+    h+='<div class="int-progbox">⏰ <span><b>Alta programada para '+escAttr(internQuando(ap.em))+'</b> ('+escAttr(ap.tipo||'')+') — marcada por '+escAttr(internNomeMed(ap.por))+'. O leito será liberado automaticamente nesse horário.</span>'
+      +'<button class="btn small" onclick="internCancelarProg(\''+id+'\')">✕ Cancelar programação</button></div>';
+  }
+  var agora=new Date(internAgora()), def=new Date(agora.getTime());
+  if(agora.getHours()<10){ def.setHours(10,0,0,0); } else { def.setHours(agora.getHours()+1,0,0,0); }   // padrão: 10h00 de hoje ou a próxima hora cheia
+  h+='<div class="lin">'
+    +'<label>Tipo de alta<select id="intProgTipo">'+INTERN_ALTAS.map(function(x){ return '<option'+(r.altaProgramada&&r.altaProgramada.tipo===x?' selected':'')+'>'+x+'</option>'; }).join('')+'</select></label>'
+    +'<label>Dia<input id="intProgData" type="date" value="'+internDataIso(r.altaProgramada?new Date(r.altaProgramada.em):def)+'"></label>'
+    +'<label>Hora<input id="intProgHora" type="time" value="'+internHoraTxt(r.altaProgramada?new Date(r.altaProgramada.em):def)+'"></label>'
+    +'<button class="btn" style="color:var(--amber);border-color:var(--amber)" onclick="internProgramarAlta(\''+id+'\')">⏰ '+(r.altaProgramada?'Reprogramar alta':'Programar alta')+'</button>'
+    +'<span id="intProgMsg" style="color:var(--red);font-size:12px;align-self:center"></span>'
+    +'</div>';
+  h+='<div class="lin"><button class="btn danger" onclick="internApagar(\''+id+'\')">🗑 Apagar paciente — liberar o leito agora</button>'
+    +'<span style="font-size:11.5px;color:var(--muted);align-self:center">O registro vai para "Altas recentes" e pode ser reinternado se foi engano.</span></div>';
+  h+='</div>';
+  box.innerHTML=h; box.style.display='block';
 }
 function internSalvar(){
   var num=(gv('intFnum').value||'').trim();
@@ -5541,7 +5663,7 @@ function internSalvar(){
   r.longaPerm=gv('intFlonga').value||'';
   r.visita=gv('intFvisita').value||'';
   r.pendMulti=(gv('intFmulti').value||'').trim();
-  internStamp(r);
+  internStamp(r); internAssume(r);
   internData[id]=r;
   var ehEdicao=!!internEditId;
   internFormFechar();
@@ -5565,7 +5687,7 @@ function internItemAdd(id,cat,txt){
   for(var k in r.pendencias){ var q=r.pendencias[k]; if(!q.feito && (q.cat||'pend')===cat && String(q.txt||'').trim().toLowerCase()===txt.toLowerCase()){ toast('Esse item já está aberto.'); return false; } }
   var pid='q'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   r.pendencias[pid]={ txt:txt, cat:cat, feito:false, por:currentUser||'', em:Date.now() };
-  internStamp(r);
+  internStamp(r); internAssume(r);
   internPush(id);
   return true;
 }
@@ -5586,21 +5708,21 @@ function internPendToggle(id,pid,chk){
   p.feito=!!chk;
   if(p.feito){ p.feitoPor=currentUser||''; p.feitoEm=Date.now(); }
   else { p.feitoPor=null; p.feitoEm=null; }
-  internStamp(r);
+  internStamp(r); internAssume(r);
   internPush(id);
 }
 function internPendDel(id,pid){
   var r=internData[id]; if(!r||!r.pendencias||!r.pendencias[pid]) return;
   if(!confirm('Excluir esta pendência?\n\n"'+(r.pendencias[pid].txt||'')+'"')) return;
   delete r.pendencias[pid];
-  internStamp(r);
+  internStamp(r); internAssume(r);
   internPush(id);
 }
 /* ---- observações livres ---- */
 function internObsSave(id){
   var ta=gv('intObs_'+id); var r=internData[id]; if(!ta||!r) return;
   r.obs=ta.value||'';
-  internStamp(r);
+  internStamp(r); internAssume(r);
   internPush(id);
   toast('Observações salvas.');
 }
@@ -5616,25 +5738,16 @@ function internAltaConfirm(id){
   var hr=gv('intAltaHora_'+id).value||'';
   if(!tipo){ toast('Escolha o tipo de alta.'); return; }
   if(!confirm('Confirmar alta do atendimento '+(r.numAtendimento||'')+' (leito '+(r.leito||'—')+')?\nO cartão sai do quadro e vai para "Altas recentes".')) return;
-  var rec={}; for(var k in r){ rec[k]=r[k]; }
-  rec.tipoAlta=tipo; rec.nomeAlta=nome; rec.dataFim=dt; rec.horaFim=hr;
-  rec.mesRef=(dt||'').slice(0,7);
-  rec.altaPor=currentUser||''; rec.altaEm=Date.now();
-  delete internData[id];
-  internAltaId=null;
-  fbDB.ref('internados/altas/'+id).set(rec).then(function(){
-    return fbDB.ref('internados/pacientes/'+id).set(null);
-  }).then(function(){ toast('Alta registrada.'); }).catch(function(e){
-    toast('⚠ Erro ao registrar a alta na nuvem: '+((e&&e.message)||'erro'));
-  });
-  internLocalSave(); internBadgeUpd(); internRender();
+  internSaida(id,{ tipoAlta:tipo, nomeAlta:nome, dataFim:dt, horaFim:hr, altaPor:currentUser||'' })
+    .then(function(){ toast('Alta registrada.'); })
+    .catch(function(e){ toast('⚠ Erro ao registrar a alta na nuvem: '+((e&&e.message)||'erro')); });
 }
 function internReinternar(id,rec){
   if(!fbDB){ toast('Reinternar exige conexão.'); return; }
   if(!confirm('Devolver o atendimento '+(rec.numAtendimento||'')+' ao quadro de internados?')) return;
   var r={}; for(var k in rec){ r[k]=rec[k]; }
-  delete r.tipoAlta; delete r.nomeAlta; delete r.dataFim; delete r.horaFim; delete r.mesRef; delete r.altaPor; delete r.altaEm;
-  internStamp(r);
+  delete r.tipoAlta; delete r.nomeAlta; delete r.dataFim; delete r.horaFim; delete r.mesRef; delete r.altaPor; delete r.altaEm; delete r.altaProgramada;
+  internStamp(r); internAssume(r);
   fbDB.ref('internados/pacientes/'+id).set(r).then(function(){
     return fbDB.ref('internados/altas/'+id).set(null);
   }).then(function(){ toast('Paciente devolvido ao quadro.'); internAltasLoad(); }).catch(function(e){
@@ -6238,7 +6351,8 @@ var INTERN_COLS=[
   ['antibiotico','Antibiótico? Dias e Qual? Febre?',155],['dispositivos','DISPOSITIVOS',78],
   ['pontoAtencao','Paciente Watcher? PONTO ATENÇÃO',125],['longaPerm','Longa Permanência?',70],
   ['pendMulti','Pendência equipe Multidisciplinar?',115],['obs','OBSERVAÇÕES (Alergia, Isolamento, complexidade, etc)',195],
-  ['visita','Visita Clínica Sim (S) / Não (N)',66]
+  ['visita','Visita Clínica Sim (S) / Não (N)',66],
+  ['medicoResp','MÉDICO RESPONSÁVEL',130]   /* coluna da plataforma (não existe na folha): quem editou por último */
 ];
 var internDetOpen={};   // linhas de detalhe (pendências/obs/alta) abertas, por id
 function internDetToggle(id){ internDetOpen[id]=!internDetOpen[id]; if(!internDetOpen[id] && internAltaId===id) internAltaId=null; internRender(); }
@@ -6251,6 +6365,7 @@ function internCell(r,c){
   if(c==='dataInicio') v=r.dataInicio?internFmtDH(r.dataInicio,''):'';
   else if(c==='idade') return escAttr(r.idade||'')+(r.acomodacao?('<br>'+escAttr(r.acomodacao)):'');
   else if(c==='diagnostico') v=r.diagnostico||((r.cid||'')+(r.nomeCid?(' '+r.nomeCid):''));
+  else if(c==='medicoResp'){ var m=r.medicoResp; return m&&m.login?('<b>'+escAttr(internNomeCurto(m.login))+'</b><span class="int-resp">'+internFmtTs(m.em)+'</span>'):'<span style="color:var(--muted)">—</span>'; }
   else v=r[c];
   return escAttr(v||'');
 }
@@ -6322,14 +6437,15 @@ function internRender(){
   function linhaPaciente(leitoLbl,id){
     var r=internData[id]||{};
     var pend=r.pendencias||{}, ab=Object.keys(pend).filter(function(p){ return !pend[p].feito; }).length;
-    var s='<tr class="int-row"><td class="c-leito">'+escAttr(leitoLbl||r.leito||'—')+'</td>';
+    var ap=r.altaProgramada, selo=ap&&ap.em?('<br><span class="int-prog" title="Alta programada ('+escAttr(ap.tipo||'')+') — '+escAttr(internNomeMed(ap.por))+'">⏰ '+escAttr(internQuando(ap.em).replace(' às ',' '))+'</span>'):'';
+    var s='<tr class="int-row"><td class="c-leito">'+escAttr(leitoLbl||r.leito||'—')+selo+'</td>';
     INTERN_COLS.forEach(function(c){ s+='<td class="'+(c[0]==='nome'?'c-nome':'')+(c[3]?' c-nw':'')+'">'+internCell(r,c[0])+'</td>'; });
     s+='<td class="c-acoes">'
       +'<button class="btn small" onclick="internDetToggle(\''+id+'\')" title="Passagem de plantão: pendências, o que avaliar, programação de alta e observações">📋<span class="int-pbadge'+(ab?'':' zero')+'">'+ab+'</span></button> '
       +'<button class="btn small" onclick="internEditar(\''+id+'\')" title="Editar linha">✏️</button> '
       +'<button class="btn small" style="color:var(--amber);border-color:var(--amber)" onclick="internAltaOpen(\''+id+'\')" title="Dar alta">🏥</button>'
       +'</td></tr>';
-    if(internDetOpen[id] || internAltaId===id) s+='<tr class="int-det"><td colspan="'+NCOL+'"><div class="int-detbox"><div class="int-detttl">📋 Passagem de plantão — Leito '+escAttr(leitoLbl||r.leito||'—')+(r.nome?(' · '+escAttr(r.nome)):'')+'</div>'+internDetalhe(id,r)+'</div></td></tr>';
+    if(internDetOpen[id] || internAltaId===id) s+='<tr class="int-det"><td colspan="'+NCOL+'"><div class="int-detbox"><div class="int-detttl">📋 Passagem de plantão — Leito '+escAttr(leitoLbl||r.leito||'—')+(r.nome?(' · '+escAttr(r.nome)):'')+'<span style="font-weight:600;font-size:12px;color:var(--muted)"> · 👨‍⚕️ Responsável: '+escAttr(r.medicoResp&&r.medicoResp.login?internNomeMed(r.medicoResp.login):'—')+'</span>'+(r.altaProgramada?('<span class="int-prog" style="margin-left:8px;font-size:11px">⏰ Alta '+escAttr(internQuando(r.altaProgramada.em))+'</span>'):'')+'</div>'+internDetalhe(id,r)+'</div></td></tr>';
     return s;
   }
   INTERN_LEITOS.forEach(function(L){
